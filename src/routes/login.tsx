@@ -84,7 +84,7 @@ function LoginPage() {
 
           {/* Header */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="font-display text-3xl font-bold sm:text-4xl">Welcome back!</h1>
+            <h1 className="font-display text-3xl font-bold sm:text-4xl">Welcome back!!!</h1>
             <p className="mt-1.5 font-medium text-muted-foreground sm:mt-2">
               Login ke akun MewDrive kamu
             </p>
