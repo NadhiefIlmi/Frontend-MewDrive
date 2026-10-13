@@ -1,0 +1,62 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Copy build result ke VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: ".output/"
+          target: "/var/mydrive/Frontend-MewDrive/"
+          strip_components: 0
+
+      - name: Restart frontend via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+
+            echo ">>> Masuk ke direktori frontend"
+            cd /var/mydrive/Frontend-MewDrive
+
+            echo ">>> Pull latest code (untuk sync file config/env)"
+            git pull origin main
+
+            echo ">>> Reload frontend tanpa downtime"
+            pm2 reload mewdrive-frontend --update-env
+
+            echo ">>> Simpan state PM2"
+            pm2 save
+
+            echo ">>> Deploy frontend selesai!"
