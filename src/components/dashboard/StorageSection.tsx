@@ -72,16 +72,16 @@ export function StorageSection() {
   const TipIcon = pct >= 70 ? AlertTriangle : Lightbulb;
 
   return (
-    <section className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <section className="mt-6 grid gap-4 sm:mt-10 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* Storage Breakdown */}
-      <div className="rounded-ui border-2 border-ink bg-card p-6 shadow-brutal">
+      <div className="rounded-ui border-2 border-ink bg-card p-4 shadow-brutal sm:p-6">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 place-items-center rounded-ui border-2 border-ink bg-sky">
-            <HardDrive className="size-6" />
+          <span className="grid size-9 shrink-0 place-items-center rounded-ui border-2 border-ink bg-sky sm:size-11">
+            <HardDrive className="size-5 sm:size-6" />
           </span>
-          <div>
-            <h2 className="font-display text-2xl font-bold">Breakdown Penyimpanan</h2>
-            <p className="text-sm font-medium text-muted-foreground">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-bold sm:text-2xl">Breakdown Penyimpanan</h2>
+            <p className="text-xs font-medium text-muted-foreground sm:text-sm">
               Lihat penggunaan storage berdasarkan tipe file.
             </p>
           </div>
@@ -95,42 +95,39 @@ export function StorageSection() {
         ) : (
           <>
             {/* Progress Bar */}
-            <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between">
+            <div className="mt-4 sm:mt-6">
+              <div className="mb-2 flex items-center justify-between text-sm sm:text-base">
                 <span className="font-bold">
                   {formatBytes(used)} dari {formatBytes(quota)}
                 </span>
                 <span className={`font-semibold ${pctColor}`}>{pct}%</span>
               </div>
-              <div className="flex h-8 overflow-hidden rounded-ui border-2 border-ink">
+              <div className="flex h-6 overflow-hidden rounded-ui border-2 border-ink sm:h-8">
                 {breakdown.length > 0 ? (
                   breakdown.map((item, idx) => (
                     <div
                       key={item.category}
-                      className={`${BAR_COLORS[idx % BAR_COLORS.length]} flex items-center justify-center text-xs font-bold`}
+                      className={`${BAR_COLORS[idx % BAR_COLORS.length]}`}
                       style={{ width: `${Math.max(item.pct, 0.5)}%` }}
                       title={`${item.category}: ${formatBytes(item.total_size)} (${item.pct}%)`}
                     />
                   ))
                 ) : (
-                  <div
-                    className="bg-muted"
-                    style={{ width: `${pct}%` }}
-                  />
+                  <div className="bg-muted" style={{ width: `${pct}%` }} />
                 )}
                 <div className="flex-1 bg-background" />
               </div>
               {/* Legenda */}
               {breakdown.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-3">
+                <div className="mt-2 flex flex-wrap gap-2 sm:gap-3">
                   {breakdown.map((item, idx) => (
-                    <span key={item.category} className="flex items-center gap-1.5 text-xs font-semibold">
-                      <span className={`inline-block size-3 rounded-sm border border-ink/30 ${BAR_COLORS[idx % BAR_COLORS.length]}`} />
+                    <span key={item.category} className="flex items-center gap-1 text-xs font-semibold sm:gap-1.5">
+                      <span className={`inline-block size-2.5 rounded-sm border border-ink/30 sm:size-3 ${BAR_COLORS[idx % BAR_COLORS.length]}`} />
                       {item.category}
                     </span>
                   ))}
-                  <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                    <span className="inline-block size-3 rounded-sm border border-ink/30 bg-background" />
+                  <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground sm:gap-1.5">
+                    <span className="inline-block size-2.5 rounded-sm border border-ink/30 bg-background sm:size-3" />
                     Tersedia
                   </span>
                 </div>
@@ -138,7 +135,7 @@ export function StorageSection() {
             </div>
 
             {/* Breakdown List */}
-            <div className="mt-8 space-y-3">
+            <div className="mt-5 space-y-2 sm:mt-8 sm:space-y-3">
               {breakdown.length === 0 ? (
                 <p className="py-6 text-center text-sm font-semibold text-muted-foreground">
                   Belum ada file tersimpan.
@@ -149,19 +146,19 @@ export function StorageSection() {
                   return (
                     <div
                       key={item.category}
-                      className="flex items-center justify-between rounded-ui border-2 border-ink bg-background p-4"
+                      className="flex items-center justify-between rounded-ui border-2 border-ink bg-background p-3 sm:p-4"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className={`grid size-10 place-items-center rounded-ui border-2 border-ink ${color}`}>
-                          <Icon className="size-5" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className={`grid size-9 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-10 ${color}`}>
+                          <Icon className="size-4 sm:size-5" />
                         </span>
                         <div>
-                          <p className="font-bold">{item.category}</p>
+                          <p className="text-sm font-bold sm:text-base">{item.category}</p>
                           <p className="text-xs text-muted-foreground">{item.file_count} file</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold">{formatBytes(item.total_size)}</p>
+                        <p className="text-sm font-bold sm:text-base">{formatBytes(item.total_size)}</p>
                         <p className={`text-xs font-semibold ${pctColor}`}>{item.pct}%</p>
                       </div>
                     </div>
@@ -174,9 +171,9 @@ export function StorageSection() {
       </div>
 
       {/* Storage Summary */}
-      <div className={`rounded-ui border-2 border-ink p-5 shadow-brutal-sm ${pct >= 90 ? "bg-coral" : "bg-coral"}`}>
-        <HardDrive className="size-7" />
-        <p className="mt-3 font-display text-xl font-bold">Storage Quota</p>
+      <div className={`rounded-ui border-2 border-ink p-4 shadow-brutal-sm sm:p-5 ${pct >= 90 ? "bg-coral" : "bg-coral"}`}>
+        <HardDrive className="size-6 sm:size-7" />
+        <p className="mt-2 font-display text-lg font-bold sm:mt-3 sm:text-xl">Storage Quota</p>
         {loading ? (
           <p className="mt-1 text-sm font-medium text-muted-foreground">Memuat...</p>
         ) : (
@@ -195,7 +192,7 @@ export function StorageSection() {
             <p className="mt-1 text-xs font-bold">{pct}% terpakai</p>
           </>
         )}
-        <div className="mt-4 flex items-start gap-2 rounded-ui border-2 border-ink bg-sun p-3 text-sm font-semibold">
+        <div className="mt-3 flex items-start gap-2 rounded-ui border-2 border-ink bg-sun p-3 text-sm font-semibold sm:mt-4">
           <TipIcon className="mt-0.5 size-4 shrink-0" />
           <span>{tipText}</span>
         </div>

@@ -70,31 +70,31 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left Side - Login Form */}
-      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16">
+      <div className="flex w-full flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:w-1/2 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8 flex items-center gap-3 font-display text-3xl font-bold">
-            <img 
-              src={catLogo} 
-              alt="Cat Logo" 
-              className="size-12 rounded-ui border-2 border-ink shadow-brutal-sm object-cover"
+          <div className="mb-6 flex items-center gap-2.5 font-display text-2xl font-bold sm:mb-8 sm:gap-3 sm:text-3xl">
+            <img
+              src={catLogo}
+              alt="Cat Logo"
+              className="size-9 rounded-ui border-2 border-ink object-cover shadow-brutal-sm sm:size-12"
             />
             MewDrive
           </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-display text-4xl font-bold">Welcome back!</h1>
-            <p className="mt-2 font-medium text-muted-foreground">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="font-display text-3xl font-bold sm:text-4xl">Welcome back!</h1>
+            <p className="mt-1.5 font-medium text-muted-foreground sm:mt-2">
               Login ke akun MewDrive kamu
             </p>
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {/* Email */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-bold sm:mb-2">
                 Email Address
               </label>
               <input
@@ -102,21 +102,21 @@ function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@example.com"
-                className="w-full rounded-ui border-2 border-ink bg-card px-4 py-3 font-semibold outline-none transition-colors focus:bg-lime/20 focus:ring-2 focus:ring-ink focus:ring-offset-2"
+                className="w-full rounded-ui border-2 border-ink bg-card px-4 py-2.5 font-semibold outline-none transition-colors focus:bg-lime/20 focus:ring-2 focus:ring-ink focus:ring-offset-2 sm:py-3"
                 autoFocus
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="mb-2 block text-sm font-bold">Password</label>
+              <label className="mb-1.5 block text-sm font-bold sm:mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full rounded-ui border-2 border-ink bg-card px-4 py-3 pr-12 font-semibold outline-none transition-colors focus:bg-lime/20 focus:ring-2 focus:ring-ink focus:ring-offset-2"
+                  className="w-full rounded-ui border-2 border-ink bg-card px-4 py-2.5 pr-12 font-semibold outline-none transition-colors focus:bg-lime/20 focus:ring-2 focus:ring-ink focus:ring-offset-2 sm:py-3"
                 />
                 <button
                   type="button"
@@ -146,34 +146,14 @@ function LoginPage() {
             </Button>
           </form>
 
-          {/* Info */}
-          <div className="mt-8 rounded-ui border-2 border-ink bg-sun p-4">
-            <p className="text-sm font-bold">ℹ️ Demo Login</p>
-            <p className="mt-1 text-xs font-medium text-muted-foreground">
-              Email: <span className="font-bold">nadhiefilmi@gmail.com</span>
-              <br />
-              Password: <span className="font-bold">nadhif123</span>
-            </p>
-          </div>
 
-          {/* Footer Note */}
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>
-              Tidak ada public registration.
-              <br />
-              Akun dibuat oleh Admin.
-            </p>
-          </div>
         </div>
       </div>
 
-      {/* Right Side - Illustration */}
+      {/* Right Side - Illustration (desktop only) */}
       <div className="relative hidden w-1/2 overflow-hidden border-l-2 border-ink bg-lilac lg:block">
         <div className="absolute inset-0 flex flex-col items-center justify-center p-16 text-center">
           <div className="relative z-10 max-w-lg">
-            <p className="inline-block rounded-full border-2 border-ink bg-card px-4 py-2 text-sm font-bold uppercase">
-              Personal Document Manager
-            </p>
             <h2 className="mt-6 font-display text-5xl font-bold leading-tight">
               Kelola dokumen dengan rapi & aman
             </h2>
@@ -182,8 +162,8 @@ function LoginPage() {
               yang terorganisir.
             </p>
           </div>
-          
-          {/* Cat Image - Login page */}
+
+          {/* Cat Image */}
           <div className="relative mt-12 h-64 w-full max-w-md overflow-hidden rounded-ui border-2 border-ink shadow-brutal">
             <img
               src={loginKucing}

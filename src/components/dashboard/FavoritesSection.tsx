@@ -18,7 +18,19 @@ const FOLDERS_LIMIT = 12;
 const FILES_LIMIT   = 10;
 
 // ─── Color resolver ───────────────────────────────────────────────────────────
+// Mendukung nilai baru (dari backend: blue, green, dll.) dan nilai lama (sky, lime, dll.)
 const COLOR_MAP: Record<string, string> = {
+  // Nilai baru (backend VALID_COLORS)
+  gray:   "bg-muted",
+  purple: "bg-lilac",
+  blue:   "bg-sky",
+  green:  "bg-lime",
+  yellow: "bg-sun",
+  red:    "bg-coral",
+  pink:   "bg-pink-200",
+  orange: "bg-orange-200",
+  teal:   "bg-teal-200",
+  // Nilai lama (backward-compat untuk data yang sudah tersimpan di DB)
   default: "bg-muted",
   lilac:   "bg-lilac",
   sky:     "bg-sky",
@@ -103,19 +115,19 @@ function StarredFolderCard({
   const colorCls   = resolveFolderColor(folder.color);
 
   return (
-    <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-card p-4 shadow-brutal-sm">
+    <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-card p-3 shadow-brutal-sm sm:p-4">
       <button
         onClick={() => onOpen(folder)}
-        className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink ${colorCls}`}
+        className={`grid size-10 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-12 ${colorCls}`}
         title="Buka folder"
       >
-        <FolderIcon className="size-6" />
+        <FolderIcon className="size-5 sm:size-6" />
       </button>
 
       <div className="min-w-0 flex-1">
         <button
           onClick={() => onOpen(folder)}
-          className="truncate font-bold hover:underline text-left w-full"
+          className="truncate font-bold hover:underline text-left w-full text-sm sm:text-base"
         >
           {folder.name}
         </button>
@@ -127,7 +139,7 @@ function StarredFolderCard({
         title="Hapus dari favorit"
         className="grid size-8 shrink-0 place-items-center rounded hover:bg-muted"
       >
-        <StarOff className="size-5 text-amber-400" />
+        <StarOff className="size-4 sm:size-5 text-amber-400" />
       </button>
     </div>
   );
@@ -149,45 +161,48 @@ function StarredFileRow({
   const colorCls = getFileColorCls(file.mime_type);
 
   return (
-    <div className="flex items-center gap-4 rounded-ui border-2 border-ink bg-card p-4 shadow-brutal-sm">
-      <div className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink ${colorCls}`}>
-        <Icon className="size-6" />
+    <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-card p-3 shadow-brutal-sm sm:gap-4 sm:p-4">
+      {/* Icon */}
+      <div className={`grid size-10 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-12 ${colorCls}`}>
+        <Icon className="size-5 sm:size-6" />
       </div>
 
+      {/* Info */}
       <div className="min-w-0 flex-1">
         <button
           onClick={() => onPreview(file)}
-          className="truncate font-bold hover:underline text-left w-full"
+          className="block w-full truncate text-left text-sm font-bold hover:underline sm:text-base"
         >
           {file.name}
         </button>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-xs font-medium text-muted-foreground">
           {file.extension.toUpperCase()} • {formatBytes(file.size)}
         </p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
+      {/* Actions — selalu muat 3 tombol tanpa overflow */}
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
         <a
           href={api.getFileDownloadUrl(file.id)}
           download={file.original_name}
           title="Download"
           className="grid size-8 place-items-center rounded hover:bg-muted"
         >
-          <Download className="size-5" />
+          <Download className="size-4 sm:size-5" />
         </a>
         <button
           onClick={() => onUnstar(file)}
           title="Hapus dari favorit"
           className="grid size-8 place-items-center rounded hover:bg-muted"
         >
-          <StarOff className="size-5 text-amber-400" />
+          <StarOff className="size-4 sm:size-5 text-amber-400" />
         </button>
         <button
           onClick={() => onTrash(file)}
           title="Pindahkan ke sampah"
           className="grid size-8 place-items-center rounded hover:bg-muted text-red-500 hover:text-red-700"
         >
-          <Trash2 className="size-5" />
+          <Trash2 className="size-4 sm:size-5" />
         </button>
       </div>
     </div>
@@ -318,9 +333,9 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
   // ── Empty state ───────────────────────────────────────────────────────────
   if (total === 0 && filesTotal === 0 && foldersTotal === 0) {
     return (
-      <div className="mt-6 rounded-ui border-2 border-dashed border-ink/30 bg-card p-12 text-center">
-        <Star className="mx-auto mb-3 size-10 text-muted-foreground" />
-        <p className="font-display text-lg font-bold">Belum ada favorit</p>
+      <div className="mt-6 rounded-ui border-2 border-dashed border-ink/30 bg-card p-8 text-center sm:p-12">
+        <Star className="mx-auto mb-3 size-8 text-muted-foreground sm:size-10" />
+        <p className="font-display text-base font-bold sm:text-lg">Belum ada favorit</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Tandai file atau folder dengan ★ untuk menampilkannya di sini
         </p>
@@ -329,17 +344,17 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
   }
 
   return (
-    <div className="mt-4 space-y-8">
+    <div className="mt-4 space-y-6 sm:space-y-8">
       {/* Starred Folders */}
       {(starredFolders.length > 0 || foldersTotal > 0) && (
         <section>
-          <h2 className="mb-3 font-display text-xl font-bold">
+          <h2 className="mb-3 font-display text-lg font-bold sm:text-xl">
             Folder
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({foldersTotal})
             </span>
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {starredFolders.map(folder => (
               <StarredFolderCard
                 key={folder.id}
@@ -362,13 +377,13 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
       {/* Starred Files */}
       {(starredFiles.length > 0 || filesTotal > 0) && (
         <section>
-          <h2 className="mb-3 font-display text-xl font-bold">
+          <h2 className="mb-3 font-display text-lg font-bold sm:text-xl">
             File
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({filesTotal})
             </span>
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {starredFiles.map(file => (
               <StarredFileRow
                 key={file.id}

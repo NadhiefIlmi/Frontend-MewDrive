@@ -408,6 +408,8 @@ function Index() {
               <HomeSection
                 folders={apiFolders}
                 foldersLoading={foldersLoading}
+                foldersTotal={foldersTotal}
+                filesTotal={filesTotal}
                 onSectionChange={selectSection}
                 onFolderOpen={handleFolderOpen}
                 onFolderCreate={() => { selectSection("files"); setShowCreateFolder(true); }}
@@ -601,7 +603,7 @@ function Index() {
           <ConfirmDialog
             title="Hapus Pengguna"
             message={`Akun "${deletingUser.name}" akan dihapus permanen. Semua data milik user ini tetap ada di sistem. Tindakan ini tidak bisa dibatalkan.`}
-            confirmLabel="Hapus Pengguna"
+            confirmLabel="Ya, Hapus"
             variant="destructive"
             onConfirm={confirmDeleteUser}
             onCancel={() => setDeletingUser(null)}

@@ -150,56 +150,57 @@ function FileRow({
   const { can } = useAuth();
 
   return (
-    <div className="flex items-center gap-4 rounded-ui border-2 border-ink bg-card p-4 shadow-brutal-sm">
+    <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-card p-3 shadow-brutal-sm sm:gap-4 sm:p-4">
       {/* Icon */}
-      <div className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink ${color}`}>
-        <Icon className="size-6" />
+      <div className={`grid size-10 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-12 ${color}`}>
+        <Icon className="size-5 sm:size-6" />
       </div>
 
-      {/* Info — klik nama buka preview */}
+      {/* Info */}
       <div className="min-w-0 flex-1">
         <button
           onClick={() => onPreview(file)}
-          className="w-full truncate text-left font-bold hover:underline"
+          className="w-full truncate text-left text-sm font-bold hover:underline sm:text-base"
         >
           {file.name}
         </button>
-        <p className="text-sm font-medium text-muted-foreground">
-          {file.extension.toUpperCase()} • {formatBytes(file.size)} • {formatDate(file.created_at)}
+        <p className="truncate text-xs font-medium text-muted-foreground">
+          <span className="hidden sm:inline">{file.extension.toUpperCase()} • </span>
+          {formatBytes(file.size)} • {formatDate(file.created_at)}
         </p>
       </div>
 
       {/* Actions */}
-      <div className="relative flex shrink-0 items-center gap-1">
+      <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
 
-        {/* Bintang — selalu tersedia */}
+        {/* Bintang */}
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={() => onToggleStar(file.id)}
           title={file.is_starred ? "Hapus bintang" : "Beri bintang"}
         >
-          <Star className={`size-5 ${file.is_starred ? "fill-current text-amber-400" : ""}`} />
+          <Star className={`size-4 sm:size-5 ${file.is_starred ? "fill-current text-amber-400" : ""}`} />
         </Button>
 
-        {/* Download */}
+        {/* Download — sembunyikan di mobile, tetap di sm+ */}
         {!file.is_trashed && can('download_files') && (
           <a
             href={api.getFileDownloadUrl(file.id)}
             download={file.original_name}
             title="Unduh"
-            className="grid size-8 place-items-center rounded hover:bg-muted"
+            className="hidden sm:grid size-8 place-items-center rounded hover:bg-muted"
           >
             <Download className="size-5" />
           </a>
         )}
 
-        {/* Jika di trash: Pulihkan + Hapus Permanen */}
+        {/* Trash actions */}
         {file.is_trashed ? (
           <>
             {can('delete_files') && (
               <Button variant="ghost" size="icon-sm" onClick={() => onRestore(file.id)} title="Pulihkan">
-                <RotateCcw className="size-5" />
+                <RotateCcw className="size-4 sm:size-5" />
               </Button>
             )}
             {can('delete_files') && (
@@ -210,21 +211,31 @@ function FileRow({
                 title="Hapus permanen"
                 className="text-red-600 hover:text-red-700"
               >
-                <Trash2 className="size-5" />
+                <Trash2 className="size-4 sm:size-5" />
               </Button>
             )}
           </>
         ) : (
-          /* More menu — hanya muncul jika punya setidaknya 1 aksi */
           (can('edit_files') || can('share_files') || can('delete_files')) && (
             <div className="relative">
               <Button variant="ghost" size="icon-sm" onClick={() => setMenuOpen(v => !v)}>
-                <MoreHorizontal className="size-5" />
+                <MoreHorizontal className="size-4 sm:size-5" />
               </Button>
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                   <div className="absolute right-0 top-8 z-20 min-w-[150px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal">
+                    {/* Download di dalam menu untuk mobile */}
+                    {can('download_files') && (
+                      <a
+                        href={api.getFileDownloadUrl(file.id)}
+                        download={file.original_name}
+                        className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold hover:bg-muted sm:hidden"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <Download className="size-4" /> Unduh
+                      </a>
+                    )}
                     {can('edit_files') && (
                       <button
                         className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold hover:bg-muted"
@@ -426,7 +437,7 @@ export function FilesSection({
         <ConfirmDialog
           title="Hapus Permanen"
           message={`"${deletingFile.name}" akan dihapus secara permanen dan tidak bisa dipulihkan.`}
-          confirmLabel="Hapus Permanen"
+          confirmLabel="Ya, Hapus"
           variant="destructive"
           onConfirm={confirmDelete}
           onCancel={() => setDeletingFile(null)}

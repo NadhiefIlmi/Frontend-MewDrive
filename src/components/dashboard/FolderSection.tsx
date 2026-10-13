@@ -50,17 +50,56 @@ export function getFolderIcon(iconName: string): React.ElementType {
 }
 
 // ─── Color options ────────────────────────────────────────────────────────────
+// name = nilai yang dikirim ke backend (harus cocok dengan VALID_COLORS di validator)
+// cls  = Tailwind class untuk tampilan
 const COLOR_OPTIONS = [
-  { name: "default", label: "Abu",    cls: "bg-muted" },
-  { name: "lilac",   label: "Ungu",   cls: "bg-lilac" },
-  { name: "sky",     label: "Biru",   cls: "bg-sky" },
-  { name: "lime",    label: "Hijau",  cls: "bg-lime" },
-  { name: "sun",     label: "Kuning", cls: "bg-sun" },
-  { name: "coral",   label: "Merah",  cls: "bg-coral" },
+  { name: "gray",   label: "Abu",    cls: "bg-muted" },
+  { name: "purple", label: "Ungu",   cls: "bg-lilac" },
+  { name: "blue",   label: "Biru",   cls: "bg-sky" },
+  { name: "green",  label: "Hijau",  cls: "bg-lime" },
+  { name: "yellow", label: "Kuning", cls: "bg-sun" },
+  { name: "red",    label: "Merah",  cls: "bg-coral" },
+  { name: "pink",   label: "Pink",   cls: "bg-pink-200" },
+  { name: "orange", label: "Oranye", cls: "bg-orange-200" },
+  { name: "teal",   label: "Teal",   cls: "bg-teal-200" },
 ];
 
+const VALID_COLOR_NAMES = new Set(COLOR_OPTIONS.map(c => c.name));
+
+// Mapping backward-compat: nilai lama (Tailwind alias) → class
+// Dibutuhkan agar folder yang sudah tersimpan di DB dengan nilai lama tetap tampil benar
+const LEGACY_COLOR_MAP: Record<string, string> = {
+  default: "bg-muted",
+  lilac:   "bg-lilac",
+  sky:     "bg-sky",
+  lime:    "bg-lime",
+  sun:     "bg-sun",
+  coral:   "bg-coral",
+};
+
+// Mapping legacy color value → valid color name untuk pengiriman ke backend
+const LEGACY_TO_VALID: Record<string, string> = {
+  default: "gray",
+  lilac:   "purple",
+  sky:     "blue",
+  lime:    "green",
+  sun:     "yellow",
+  coral:   "red",
+};
+
+/** Normalize nilai warna dari DB agar selalu valid untuk dikirim ke backend */
+function normalizeColor(color: string | null | undefined): string {
+  if (!color) return "gray";
+  if (VALID_COLOR_NAMES.has(color)) return color;
+  return LEGACY_TO_VALID[color] ?? "gray";
+}
+
 function getColorClass(colorName: string): string {
-  return COLOR_OPTIONS.find(c => c.name === colorName)?.cls ?? getFolderColor(0);
+  return (
+    COLOR_OPTIONS.find(c => c.name === colorName)?.cls ??
+    LEGACY_COLOR_MAP[colorName] ??
+    getFolderColor(0)
+  );
 }
 
 // ─── Icon Picker ──────────────────────────────────────────────────────────────
@@ -74,7 +113,7 @@ function IconPicker({
   return (
     <div>
       <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Pilih Icon</p>
-      <div className="grid grid-cols-6 gap-1.5 rounded-ui border-2 border-ink bg-background p-3">
+      <div className="grid grid-cols-5 gap-1.5 rounded-ui border-2 border-ink bg-background p-2 sm:grid-cols-6 sm:p-3">
         {FOLDER_ICONS.map(({ name, label, Icon }) => (
           <button
             key={name}
@@ -135,7 +174,7 @@ function CreateFolderDialog({
 }) {
   const [name, setName]     = useState("");
   const [icon, setIcon]     = useState("folder");
-  const [color, setColor]   = useState("default");
+  const [color, setColor]   = useState("gray");
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
@@ -157,22 +196,25 @@ function CreateFolderDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-ui border-2 border-ink bg-card p-6 shadow-brutal" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-3 sm:p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-ui border-2 border-ink bg-card p-4 shadow-brutal sm:p-6"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">Folder Baru</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold sm:text-xl">Folder Baru</h2>
           <Button variant="ghost" size="icon-sm" onClick={onClose}><X className="size-4" /></Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Preview */}
-          <div className="flex items-center gap-4 rounded-ui border-2 border-ink bg-background p-4">
-            <span className={`grid size-14 place-items-center rounded-ui border-2 border-ink ${previewColor}`}>
-              <PreviewIcon className="size-7" />
+          <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-background p-3">
+            <span className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-14 ${previewColor}`}>
+              <PreviewIcon className="size-6 sm:size-7" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-lg font-bold">
+              <p className="truncate font-display text-base font-bold sm:text-lg">
                 {name.trim() || "Nama folder"}
               </p>
               <p className="text-xs text-muted-foreground">Preview folder</p>
@@ -189,7 +231,7 @@ function CreateFolderDialog({
               onChange={e => setName(e.target.value)}
               placeholder="Nama folder..."
               maxLength={255}
-              className="w-full rounded-ui border-2 border-ink bg-background px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-ink"
+              className="w-full rounded-ui border-2 border-ink bg-background px-3 py-2 font-semibold outline-none focus:ring-2 focus:ring-ink sm:px-4 sm:py-2.5"
             />
           </div>
 
@@ -225,7 +267,7 @@ export function EditFolderDialog({
 }) {
   const [name, setName]     = useState(folder.name);
   const [icon, setIcon]     = useState(folder.icon ?? "folder");
-  const [color, setColor]   = useState(folder.color ?? "default");
+  const [color, setColor]   = useState(normalizeColor(folder.color));
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState<string | null>(null);
 
@@ -247,21 +289,24 @@ export function EditFolderDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-ui border-2 border-ink bg-card p-6 shadow-brutal" onClick={e => e.stopPropagation()}>
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">Edit Folder</h2>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-3 sm:p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-ui border-2 border-ink bg-card p-4 shadow-brutal sm:p-6"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold sm:text-xl">Edit Folder</h2>
           <Button variant="ghost" size="icon-sm" onClick={onClose}><X className="size-4" /></Button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Preview */}
-          <div className="flex items-center gap-4 rounded-ui border-2 border-ink bg-background p-4">
-            <span className={`grid size-14 place-items-center rounded-ui border-2 border-ink ${previewColor}`}>
-              <PreviewIcon className="size-7" />
+          <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-background p-3">
+            <span className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-14 ${previewColor}`}>
+              <PreviewIcon className="size-6 sm:size-7" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-lg font-bold">
+              <p className="truncate font-display text-base font-bold sm:text-lg">
                 {name.trim() || "Nama folder"}
               </p>
               <p className="text-xs text-muted-foreground">Preview folder</p>
@@ -277,7 +322,7 @@ export function EditFolderDialog({
               value={name}
               onChange={e => setName(e.target.value)}
               maxLength={255}
-              className="w-full rounded-ui border-2 border-ink bg-background px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-ink"
+              className="w-full rounded-ui border-2 border-ink bg-background px-3 py-2 font-semibold outline-none focus:ring-2 focus:ring-ink sm:px-4 sm:py-2.5"
             />
           </div>
 
@@ -324,7 +369,7 @@ export function FolderCard({
   onMenuToggle: (id: number | null) => void;
 }) {
   const FolderIcon = getFolderIcon(folder.icon ?? "folder");
-  const colorCls   = folder.color && folder.color !== "default"
+  const colorCls   = folder.color && folder.color !== "gray"
     ? getColorClass(folder.color)
     : getFolderColor(index);
   const isMenuOpen = menuOpenId === folder.id;
@@ -334,27 +379,27 @@ export function FolderCard({
     <button
       type="button"
       onClick={() => onOpen(folder)}
-      className={`group relative flex h-36 w-full flex-col items-start justify-between rounded-ui border-2 border-ink p-4 shadow-brutal-sm transition-transform hover:-translate-y-1 text-left ${colorCls}`}
+      className={`group relative flex h-28 w-full flex-col items-start justify-between rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-transform hover:-translate-y-1 text-left sm:h-36 sm:p-4 ${colorCls}`}
       aria-label={`Buka folder ${folder.name}`}
     >
       {/* Top row */}
       <div className="flex w-full items-start justify-between">
-        <FolderIcon className="size-9" />
+        <FolderIcon className="size-7 sm:size-9" />
         <button
           type="button"
-          className="grid size-7 place-items-center rounded-ui border-2 border-ink bg-card/80 hover:bg-card"
+          className="grid size-6 place-items-center rounded-ui border-2 border-ink bg-card/80 hover:bg-card sm:size-7"
           onClick={e => { e.stopPropagation(); onMenuToggle(isMenuOpen ? null : folder.id); }}
           data-folder-menu
         >
-          <MoreHorizontal className="size-4" />
+          <MoreHorizontal className="size-3.5 sm:size-4" />
         </button>
       </div>
 
       {/* Name + starred */}
       <div className="w-full">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {folder.is_starred && <Star className="size-3 shrink-0 fill-current text-amber-500" />}
-          <p className="truncate font-display text-lg font-bold">{folder.name}</p>
+          <p className="truncate font-display text-sm font-bold sm:text-lg">{folder.name}</p>
         </div>
         <p className="text-xs font-semibold text-foreground/60">Folder</p>
       </div>
@@ -510,25 +555,25 @@ export function FolderSection({
   return (
     <>
       {/* Breadcrumb + tombol Folder Baru sejajar */}
-      <div className="mt-4 flex items-center justify-between gap-2 flex-wrap">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         {/* Breadcrumb */}
         {breadcrumb.length > 0 ? (
-          <nav className="flex items-center gap-1 text-sm font-semibold flex-wrap">
+          <nav className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm font-semibold">
             <button
               onClick={() => onBreadcrumbNavigate?.(-1)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              File saya
+              Dokumen saya
             </button>
             {breadcrumb.map((crumb, idx) => (
               <span key={crumb.id} className="flex items-center gap-1">
                 <span className="text-muted-foreground">/</span>
                 {idx === breadcrumb.length - 1 ? (
-                  <span className="font-bold text-foreground">{crumb.name}</span>
+                  <span className="max-w-[120px] truncate font-bold text-foreground sm:max-w-none">{crumb.name}</span>
                 ) : (
                   <button
                     onClick={() => onBreadcrumbNavigate?.(idx)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="max-w-[80px] truncate text-muted-foreground transition-colors hover:text-foreground sm:max-w-none"
                   >
                     {crumb.name}
                   </button>
@@ -540,17 +585,21 @@ export function FolderSection({
           <span className="text-sm font-semibold text-muted-foreground">Folder</span>
         )}
 
-        {/* Tombol aksi sejajar kanan */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
+        {/* Tombol aksi */}
+        <div className="flex shrink-0 flex-col items-end gap-1">
           <div className="flex items-center gap-2">
             {can('create_files') && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowCreate(true)}>
-                <Folder className="size-4" /> Folder Baru
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
+                <Folder className="size-4" />
+                <span className="hidden xs:inline">Folder Baru</span>
+                <span className="xs:hidden">Folder</span>
               </Button>
             )}
             {onUploadClick && can('create_files') && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={onUploadClick}>
-                <span className="text-base leading-none">↑</span> Upload File
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={onUploadClick}>
+                <span className="text-base leading-none">↑</span>
+                <span className="hidden xs:inline">Upload File</span>
+                <span className="xs:hidden">Upload</span>
               </Button>
             )}
           </div>
@@ -560,10 +609,10 @@ export function FolderSection({
         </div>
       </div>
 
-      {/* Grid folder — kalau kosong tidak tampilkan apa-apa */}
+      {/* Grid folder */}
       {folders.length > 0 && (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {folders.map((folder, idx) => (
               <FolderCard
                 key={folder.id}

@@ -157,7 +157,7 @@ export function MoveDialog({ target, onClose, onMoved, onFlash }: MoveDialogProp
     setSubmitting(false);
 
     if (res.success) {
-      const dest = selectedId === null ? "File saya (root)" : "folder tujuan";
+      const dest = selectedId === null ? "Dokumen saya (root)" : "folder tujuan";
       onFlash(`"${itemName}" berhasil dipindahkan ke ${dest}`);
       onMoved();
       onClose();
@@ -212,7 +212,7 @@ export function MoveDialog({ target, onClose, onMoved, onFlash }: MoveDialogProp
                 : "border-transparent hover:bg-muted"}`}
           >
             <Home className="size-4 shrink-0" />
-            <span>File saya (root)</span>
+            <span>Dokumen saya (root)</span>
           </button>
 
           {loading ? (

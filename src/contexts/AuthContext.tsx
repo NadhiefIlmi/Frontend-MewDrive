@@ -42,49 +42,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch permissions untuk user tertentu
   const fetchPermissions = useCallback(async (userId: number) => {
-    const res = await api.getUserPermissions(userId);
-    if (res.success && res.data) {
-      setPermissions(new Set(res.data.map(p => p.name as PermissionName)));
+    try {
+      const res = await api.getUserPermissions(userId);
+      if (res.success && res.data) {
+        setPermissions(new Set(res.data.map(p => p.name as PermissionName)));
+      } else {
+        console.error('[AuthContext] fetchPermissions failed:', res.error);
+      }
+    } catch (error) {
+      console.error('[AuthContext] fetchPermissions threw:', error);
     }
   }, []);
 
   // Load token + user + permissions saat mount
   useEffect(() => {
     const loadAuth = async () => {
-      const savedToken = localStorage.getItem('mewdrive_token');
+      try {
+        const savedToken = localStorage.getItem('mewdrive_token');
 
-      if (savedToken) {
-        setToken(savedToken);
+        if (savedToken) {
+          setToken(savedToken);
 
-        const response = await api.getCurrentUser();
+          const response = await api.getCurrentUser();
 
-        if (response.success && response.data) {
-          setUser(response.data);
-          localStorage.setItem('mewdrive_user', JSON.stringify(response.data));
-          // Fetch permissions setelah dapat user
-          await fetchPermissions(response.data.id);
-        } else if (response.error?.code === 'TOO_MANY_REQUESTS') {
-          // Rate limited — pakai cache, fetch permissions dari cache user id
-          const cached = localStorage.getItem('mewdrive_user');
-          if (cached) {
-            try {
-              const cachedUser = JSON.parse(cached) as User;
-              await fetchPermissions(cachedUser.id);
-            } catch { /* ignore */ }
+          if (response.success && response.data) {
+            setUser(response.data);
+            localStorage.setItem('mewdrive_user', JSON.stringify(response.data));
+            // Fetch permissions setelah dapat user
+            await fetchPermissions(response.data.id);
+          } else if (response.error?.code === 'TOO_MANY_REQUESTS') {
+            // Rate limited — pakai cache, fetch permissions dari cache user id
+            const cached = localStorage.getItem('mewdrive_user');
+            if (cached) {
+              try {
+                const cachedUser = JSON.parse(cached) as User;
+                await fetchPermissions(cachedUser.id);
+              } catch (parseErr) {
+                console.error('[AuthContext] Failed to parse cached user:', parseErr);
+              }
+            }
+          } else {
+            localStorage.removeItem('mewdrive_token');
+            localStorage.removeItem('mewdrive_user');
+            setToken(null);
+            setUser(null);
+            setPermissions(new Set());
           }
         } else {
-          localStorage.removeItem('mewdrive_token');
-          localStorage.removeItem('mewdrive_user');
-          setToken(null);
           setUser(null);
           setPermissions(new Set());
         }
-      } else {
+      } catch (error) {
+        console.error('[AuthContext] loadAuth error:', error);
+        localStorage.removeItem('mewdrive_token');
+        localStorage.removeItem('mewdrive_user');
+        setToken(null);
         setUser(null);
         setPermissions(new Set());
+      } finally {
+        // Selalu matikan loading — apapun yang terjadi
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     };
 
     loadAuth();

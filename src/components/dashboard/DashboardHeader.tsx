@@ -9,7 +9,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  User,
   Settings,
   HardDrive,
   LogOut,
@@ -71,32 +70,34 @@ export function DashboardHeader({
         />
       )}
 
-      <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b-2 border-ink bg-background px-4 md:px-8">
-        <div className="mr-6 flex max-w-4xl flex-1 items-center gap-3">
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b-2 border-ink bg-background px-3 sm:h-20 md:px-8">
+        <div className="mr-3 flex min-w-0 flex-1 items-center gap-2 sm:mr-6 sm:gap-3">
           <Button
             variant="icon"
-            className="lg:hidden"
+            className="shrink-0 lg:hidden"
             aria-label="Buka navigasi"
             onClick={onSidebarToggle}
           >
             <Menu />
           </Button>
-          <SearchBar
-            placeholder={
-              activeSection === "notes"
-                ? "Cari catatan..."
-                : "Cari file atau folder..."
-            }
-            onFolderSelect={(folder) => {
-              onFolderSelect?.(folder);
-            }}
-            onFileSelect={(file) => {
-              onFileSelect?.(file);
-            }}
-          />
+          <div className="min-w-0 flex-1">
+            <SearchBar
+              placeholder={
+                activeSection === "notes"
+                  ? "Cari catatan..."
+                  : "Cari file atau folder..."
+              }
+              onFolderSelect={(folder) => {
+                onFolderSelect?.(folder);
+              }}
+              onFileSelect={(file) => {
+                onFileSelect?.(file);
+              }}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {/* Theme Switcher */}
           <div className="relative z-30">
             <Button
@@ -169,14 +170,6 @@ export function DashboardHeader({
                     </span>
                   )}
                 </div>
-                <MenuItem
-                  Icon={User}
-                  label="Profil saya"
-                  onClick={() => {
-                    setOpenMenu(null);
-                    onFlash("Halaman profil segera hadir");
-                  }}
-                />
                 <MenuItem
                   Icon={Settings}
                   label="Pengaturan"

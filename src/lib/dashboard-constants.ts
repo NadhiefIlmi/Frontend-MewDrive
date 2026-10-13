@@ -17,14 +17,13 @@ import {
   FileImage,
   Sun,
   Moon,
-  Monitor,
 } from "lucide-react";
 import type { Section, DocumentItem, Note, User, FolderItem } from "@/types/dashboard";
 import type { Theme } from "@/hooks/useTheme";
 
 export const navigation: { Icon: typeof Grid2X2; label: string; id: Section; adminOnly?: boolean }[] = [
   { Icon: Grid2X2, label: "Beranda", id: "home" },
-  { Icon: Folder, label: "File saya", id: "files" },
+  { Icon: Folder, label: "Dokumen saya", id: "files" },
   { Icon: Star, label: "Favorit", id: "favorites" },
   { Icon: StickyNote, label: "Catatan", id: "notes" },
   { Icon: Trash2, label: "Sampah", id: "trash" },
@@ -37,7 +36,7 @@ export const sectionCopy: Record<
 > = {
   files: {
     eyebrow: "Koleksi pribadi",
-    title: "File saya",
+    title: "Dokumen saya",
     description: "Semua dokumen yang kamu simpan, tersusun dalam satu tempat.",
   },
   favorites: {
@@ -94,12 +93,6 @@ export const themeOptions: {
     label: "Dark",
     description: "Tampilan gelap setiap saat",
     Icon: Moon,
-  },
-  {
-    id: "system",
-    label: "System",
-    description: "Ikuti pengaturan perangkat",
-    Icon: Monitor,
   },
 ];
 

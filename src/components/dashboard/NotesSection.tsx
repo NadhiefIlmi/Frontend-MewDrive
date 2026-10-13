@@ -9,6 +9,7 @@ import { Plus, Check, X, Loader2, Trash2, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type NoteItem } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 const NOTES_LIMIT = 20;
 
@@ -19,6 +20,19 @@ const NOTE_COLORS = [
   { value: "bg-sky",   label: "Biru" },
   { value: "bg-coral", label: "Merah" },
 ];
+
+// Strip semua tag HTML → plain text untuk preview card
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")   // ganti tag dengan spasi
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")       // collapse multiple spaces
+    .trim();
+}
 
 function formatRelative(iso: string): string {
   const d = new Date(iso);
@@ -78,9 +92,9 @@ function NoteEditor({
   const [color, setColor] = useState(note.color ?? "bg-sun");
 
   return (
-    <div className={`rounded-ui border-2 border-ink ${color} p-5 shadow-brutal`}>
+    <div className={`rounded-ui border-2 border-ink ${color} p-4 shadow-brutal sm:p-5`}>
       {/* Toolbar atas */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <ColorPicker selected={color} onChange={setColor} />
         <div className="flex gap-2">
           <Button
@@ -105,14 +119,12 @@ function NoteEditor({
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Judul catatan..."
-        className="mb-3 w-full bg-transparent font-display text-xl font-bold outline-none placeholder:text-ink/50"
+        className="mb-3 w-full bg-transparent font-display text-lg font-bold outline-none placeholder:text-ink/50 sm:text-xl"
       />
-      <textarea
-        value={body}
-        onChange={e => setBody(e.target.value)}
+      <RichTextEditor
+        content={body}
+        onChange={setBody}
         placeholder="Tulis catatan di sini..."
-        rows={6}
-        className="w-full resize-none bg-transparent font-medium outline-none placeholder:text-ink/50"
       />
     </div>
   );
@@ -129,31 +141,51 @@ function NoteCard({
   onDelete: (note: NoteItem) => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => onEdit(note)}
-      className={`group relative rounded-ui border-2 border-ink ${note.color} p-4 text-left shadow-brutal-sm transition-transform hover:-translate-y-1`}
-    >
-      {/* Delete button */}
-      <button
-        type="button"
-        title="Hapus catatan"
-        onClick={e => { e.stopPropagation(); onDelete(note); }}
-        className="absolute right-2 top-2 grid size-7 place-items-center rounded border-2 border-transparent bg-transparent opacity-0 transition-opacity hover:border-ink hover:bg-card/80 group-hover:opacity-100"
-      >
-        <Trash2 className="size-3.5 text-red-600" />
-      </button>
+    <div className="group relative rounded-ui border-2 border-ink bg-card shadow-brutal-sm transition-transform hover:-translate-y-1 overflow-hidden">
 
-      <p className="mb-2 font-display text-lg font-bold pr-6">
-        {note.title.trim() || "Tanpa judul"}
-      </p>
+      {/* ── Area atas — berwarna, berisi judul + tombol hapus ── */}
+      <div className={`relative px-4 py-3 ${note.color}`}>
+        {/* Tombol hapus */}
+        <button
+          type="button"
+          title="Hapus catatan"
+          onClick={e => { e.stopPropagation(); onDelete(note); }}
+          className="absolute right-2 top-2 grid size-7 place-items-center rounded border-2 border-transparent bg-transparent transition-opacity hover:border-ink hover:bg-card/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        >
+          <Trash2 className="size-3.5 text-red-600" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onEdit(note)}
+          className="block w-full pr-8 text-left"
+        >
+          <p className="font-display text-base font-bold sm:text-lg">
+            {note.title.trim() || "Tanpa judul"}
+          </p>
+          <p className="mt-0.5 text-xs font-semibold text-foreground/60">
+            {formatRelative(note.updated_at)}
+          </p>
+        </button>
+      </div>
+
+      {/* ── Area bawah — putih, berisi konten HTML ── */}
       {note.body && (
-        <p className="line-clamp-3 text-sm font-medium">{note.body}</p>
+        <button
+          type="button"
+          onClick={() => onEdit(note)}
+          className="block w-full text-left"
+        >
+          <div className="relative max-h-40 overflow-hidden px-4 py-3">
+            <div
+              className="prose-editor pointer-events-none text-sm"
+              dangerouslySetInnerHTML={{ __html: note.body }}
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent" />
+          </div>
+        </button>
       )}
-      <p className="mt-3 text-xs font-semibold text-foreground/60">
-        {formatRelative(note.updated_at)}
-      </p>
-    </button>
+    </div>
   );
 }
 
@@ -259,8 +291,8 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
   // ── Render: editor aktif ───────────────────────────────────────────────────
   if (editingNote !== null) {
     return (
-      <div className="mt-10 max-w-2xl">
-        <p className="mb-4 text-sm font-bold uppercase text-muted-foreground">
+      <div className="mt-6 max-w-2xl sm:mt-10">
+        <p className="mb-3 text-sm font-bold uppercase text-muted-foreground">
           {editingNote.id ? "Edit Catatan" : "Catatan Baru"}
         </p>
         <NoteEditor
@@ -275,16 +307,18 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
 
   // ── Render: list ───────────────────────────────────────────────────────────
   return (
-    <div className="mt-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-display text-2xl font-bold">
+    <div className="mt-6 sm:mt-10">
+      <div className="mb-4 flex items-center justify-between gap-3 sm:mb-6">
+        <h2 className="font-display text-xl font-bold sm:text-2xl">
           Semua Catatan
           {total > 0 && (
             <span className="ml-2 text-sm font-normal text-muted-foreground">({total})</span>
           )}
         </h2>
-        <Button onClick={() => setEditingNote({})}>
-          <Plus className="size-4" /> Catatan Baru
+        <Button size="sm" onClick={() => setEditingNote({})}>
+          <Plus className="size-4" />
+          <span className="hidden xs:inline">Catatan Baru</span>
+          <span className="xs:hidden">Baru</span>
         </Button>
       </div>
 
@@ -292,17 +326,17 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
         <button
           type="button"
           onClick={() => setEditingNote({})}
-          className="flex w-full flex-col items-center gap-3 rounded-ui border-2 border-dashed border-ink/30 bg-card p-12 text-center transition-colors hover:bg-muted"
+          className="flex w-full flex-col items-center gap-3 rounded-ui border-2 border-dashed border-ink/30 bg-card p-8 text-center transition-colors hover:bg-muted sm:p-12"
         >
-          <StickyNote className="size-10 text-muted-foreground" />
+          <StickyNote className="size-8 text-muted-foreground sm:size-10" />
           <div>
-            <p className="font-display text-lg font-bold">Belum ada catatan</p>
+            <p className="font-display text-base font-bold sm:text-lg">Belum ada catatan</p>
             <p className="mt-1 text-sm text-muted-foreground">Klik untuk membuat catatan pertama</p>
           </div>
         </button>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {notes.map(note => (
               <NoteCard
                 key={note.id}
@@ -338,7 +372,7 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
         <ConfirmDialog
           title="Hapus Catatan"
           message={`Catatan "${deletingNote.title.trim() || "Tanpa judul"}" akan dihapus permanen dan tidak bisa dipulihkan.`}
-          confirmLabel="Hapus Permanen"
+          confirmLabel="Ya, Hapus"
           variant="destructive"
           onConfirm={confirmDelete}
           onCancel={() => setDeletingNote(null)}

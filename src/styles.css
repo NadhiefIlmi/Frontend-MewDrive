@@ -183,3 +183,81 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-cat { animation: none; }
 }
+
+/* ─── Tiptap / ProseMirror Rich Text Editor ─────────────────────────────── */
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground pointer-events-none float-left h-0;
+  content: attr(data-placeholder);
+}
+
+/* Prose content */
+.prose-editor {
+  @apply text-sm leading-relaxed;
+}
+
+.prose-editor h1 { @apply font-display text-2xl font-bold mt-4 mb-2; }
+.prose-editor h2 { @apply font-display text-xl font-bold mt-3 mb-1.5; }
+.prose-editor h3 { @apply font-display text-lg font-bold mt-2.5 mb-1; }
+
+.prose-editor p { @apply my-1.5; }
+
+.prose-editor strong { @apply font-bold; }
+.prose-editor em     { @apply italic; }
+.prose-editor u      { @apply underline; }
+.prose-editor s      { @apply line-through; }
+
+.prose-editor mark {
+  @apply bg-yellow-200 dark:bg-yellow-800 rounded-sm px-0.5;
+}
+
+/* Lists */
+.prose-editor ul { @apply list-disc pl-5 my-2 space-y-0.5; }
+.prose-editor ol { @apply list-decimal pl-5 my-2 space-y-0.5; }
+.prose-editor li { @apply leading-relaxed; }
+
+/* Task list */
+.prose-editor ul[data-type="taskList"] { @apply list-none pl-1; }
+.prose-editor ul[data-type="taskList"] li {
+  @apply flex items-start gap-2;
+}
+.prose-editor ul[data-type="taskList"] li > label {
+  @apply mt-0.5 flex shrink-0 cursor-pointer items-center;
+}
+.prose-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
+  @apply size-4 rounded border-2 border-ink accent-current cursor-pointer;
+}
+.prose-editor ul[data-type="taskList"] li > div { @apply flex-1; }
+.prose-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+  @apply line-through text-muted-foreground;
+}
+
+/* Horizontal rule */
+.prose-editor hr { @apply border-ink my-4; }
+
+/* Blockquote */
+.prose-editor blockquote {
+  @apply border-l-4 border-ink pl-3 italic text-muted-foreground my-2;
+}
+
+/* Code */
+.prose-editor code {
+  @apply rounded bg-muted px-1 py-0.5 font-mono text-xs;
+}
+.prose-editor pre {
+  @apply rounded-ui border-2 border-ink bg-ink text-card p-3 my-2 overflow-x-auto;
+}
+.prose-editor pre code { @apply bg-transparent p-0; }
+
+/* Table */
+.prose-editor table {
+  @apply w-full border-collapse border-2 border-ink my-3 text-sm;
+}
+.prose-editor th {
+  @apply border-2 border-ink bg-sun px-3 py-1.5 text-left font-bold;
+}
+.prose-editor td {
+  @apply border-2 border-ink px-3 py-1.5 align-top;
+}
+.prose-editor .selectedCell { @apply bg-lime/30; }

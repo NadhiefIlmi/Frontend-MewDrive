@@ -118,144 +118,174 @@ export function ManagePermissionsDialog({
   const getLabel = (p: Permission) => PERMISSION_LABELS[p.name]?.label ?? p.label;
   const getDesc  = (p: Permission) => PERMISSION_LABELS[p.name]?.description ?? p.description;
 
-  return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-ui border-2 border-ink bg-card p-6 shadow-brutal"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="font-display text-2xl font-bold">Kelola Izin</h2>
-            <span className={`inline-flex items-center gap-1 rounded-full border-2 border-ink px-3 py-1 text-sm font-bold ${user.role === "Admin" ? "bg-coral" : "bg-sky"}`}>
-              {user.role === "Admin" && <Shield className="size-3" />}
-              {user.role}
-            </span>
+  const innerContent = (
+    <>
+      {/* User info */}
+      <div className="mb-4 rounded-ui border-2 border-ink bg-sun p-3 sm:mb-5 sm:p-4">
+        <div className="flex items-center gap-3">
+          <span className={`grid size-9 shrink-0 place-items-center rounded-full border-2 border-ink text-sm font-bold sm:size-10 ${user.color}`}>
+            {user.initial}
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate font-display font-bold">{user.name}</h3>
+            <p className="truncate text-xs font-semibold text-muted-foreground sm:text-sm">{user.email}</p>
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={onClose}>
-            <X className="size-5" />
-          </Button>
+          <span className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border-2 border-ink px-2 py-0.5 text-xs font-bold ${user.role === "Admin" ? "bg-coral" : "bg-sky"}`}>
+            {user.role === "Admin" && <Shield className="size-3" />}
+            {user.role}
+          </span>
         </div>
-
-        {/* User info */}
-        <div className="mb-6 rounded-ui border-2 border-ink bg-sun p-4">
-          <div className="flex items-center gap-3">
-            <span className={`grid size-10 shrink-0 place-items-center rounded-full border-2 border-ink text-sm font-bold ${user.color}`}>
-              {user.initial}
-            </span>
-            <div>
-              <h3 className="font-display font-bold">{user.name}</h3>
-              <p className="text-sm font-semibold text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />
-            <span className="font-semibold">Memuat izin...</span>
-          </div>
-        ) : error ? (
-          <div className="rounded-ui border-2 border-ink bg-coral p-4 text-center font-bold">
-            {error}
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Presets */}
-            <div className="rounded-ui border-2 border-ink bg-background p-4">
-              <h4 className="mb-3 font-display font-bold">Preset Cepat</h4>
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={() => applyPreset('User')} className="flex-1">
-                  <User className="mr-2 size-4" /> Pengguna Standar
-                </Button>
-                <Button type="button" variant="outline" onClick={() => applyPreset('Admin')} className="flex-1">
-                  <Shield className="mr-2 size-4" /> Administrator
-                </Button>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Klik preset untuk mengatur ulang izin ke default role.
-              </p>
-            </div>
-
-            {/* Permission Categories */}
-            {categories.map(cat => {
-              const perms = byCategory(cat);
-              if (perms.length === 0) return null;
-              const CatIcon = CATEGORY_ICONS[cat]!;
-              const isAdmin = cat === 'admin';
-              return (
-                <div key={cat} className="rounded-ui border-2 border-ink bg-background p-4">
-                  <h4 className="mb-3 flex items-center gap-2 font-display font-bold">
-                    <CatIcon className="size-5" />
-                    {CATEGORY_LABELS[cat]}
-                  </h4>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {perms.map(p => {
-                      const isSelected = selectedNames.has(p.name);
-                      const Icon = ICON_MAP[p.name] ?? Shield;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => togglePermission(p.name)}
-                          className={`flex items-start gap-3 rounded-ui border-2 border-ink p-3 text-left transition-colors ${
-                            isSelected
-                              ? isAdmin ? "bg-coral shadow-brutal-sm" : "bg-lime shadow-brutal-sm"
-                              : isAdmin ? "bg-card hover:bg-coral/20" : "bg-card hover:bg-lime/20"
-                          }`}
-                        >
-                          <div className="flex shrink-0 items-center gap-2">
-                            <Icon className="size-4" />
-                            {isSelected
-                              ? <CheckCircle className="size-4 text-lime-700" />
-                              : <XCircle className="size-4 text-muted-foreground" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold">{getLabel(p)}</p>
-                            <p className="text-xs text-muted-foreground">{getDesc(p)}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Ringkasan */}
-            <div className="rounded-ui border-2 border-ink bg-sun p-4">
-              <h4 className="mb-2 font-display font-bold">Ringkasan Izin</h4>
-              <p className="text-sm font-semibold">
-                {selectedNames.size} dari {allPermissions.length} izin dipilih
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {Array.from(selectedNames).map(name => {
-                  const p = allPermissions.find(x => x.name === name);
-                  return p ? (
-                    <span key={name} className="inline-block rounded-full border border-ink bg-lime px-2 py-1 text-xs font-bold">
-                      {getLabel(p)}
-                    </span>
-                  ) : null;
-                })}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-                Batal
-              </Button>
-              <Button type="submit" className="flex-1" disabled={saving}>
-                {saving ? <Loader2 className="size-4 animate-spin" /> : "Simpan Izin"}
-              </Button>
-            </div>
-          </form>
-        )}
       </div>
-    </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+          <span className="font-semibold">Memuat izin...</span>
+        </div>
+      ) : error ? (
+        <div className="rounded-ui border-2 border-ink bg-coral p-4 text-center font-bold">
+          {error}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Presets */}
+          <div className="rounded-ui border-2 border-ink bg-background p-3">
+            <h4 className="mb-2.5 font-display text-sm font-bold">Preset Cepat</h4>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => applyPreset('User')} className="flex-1">
+                <User className="mr-1.5 size-4" /> Standar
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => applyPreset('Admin')} className="flex-1">
+                <Shield className="mr-1.5 size-4" /> Admin
+              </Button>
+            </div>
+          </div>
+
+          {/* Permission Categories */}
+          {categories.map(cat => {
+            const perms = byCategory(cat);
+            if (perms.length === 0) return null;
+            const CatIcon = CATEGORY_ICONS[cat]!;
+            const isAdmin = cat === 'admin';
+            return (
+              <div key={cat} className="rounded-ui border-2 border-ink bg-background p-3">
+                <h4 className="mb-2.5 flex items-center gap-2 font-display text-sm font-bold">
+                  <CatIcon className="size-4" />
+                  {CATEGORY_LABELS[cat]}
+                </h4>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {perms.map(p => {
+                    const isSelected = selectedNames.has(p.name);
+                    const Icon = ICON_MAP[p.name] ?? Shield;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => togglePermission(p.name)}
+                        className={`flex items-start gap-2 rounded-ui border-2 border-ink p-2.5 text-left transition-colors ${
+                          isSelected
+                            ? isAdmin ? "bg-coral shadow-brutal-sm" : "bg-lime shadow-brutal-sm"
+                            : isAdmin ? "bg-card hover:bg-coral/20" : "bg-card hover:bg-lime/20"
+                        }`}
+                      >
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <Icon className="size-4" />
+                          {isSelected
+                            ? <CheckCircle className="size-4 text-lime-700" />
+                            : <XCircle className="size-4 text-muted-foreground" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{getLabel(p)}</p>
+                          <p className="text-xs text-muted-foreground">{getDesc(p)}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Ringkasan */}
+          <div className="rounded-ui border-2 border-ink bg-sun p-3">
+            <h4 className="mb-1.5 font-display text-sm font-bold">Ringkasan</h4>
+            <p className="text-sm font-semibold">{selectedNames.size} dari {allPermissions.length} izin dipilih</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {Array.from(selectedNames).map(name => {
+                const p = allPermissions.find(x => x.name === name);
+                return p ? (
+                  <span key={name} className="inline-block rounded-full border border-ink bg-lime px-2 py-0.5 text-xs font-bold">
+                    {getLabel(p)}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" className="flex-1" disabled={saving}>
+              {saving ? <Loader2 className="size-4 animate-spin" /> : "Simpan Izin"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {/* ── Mobile: bottom sheet (< sm) ── */}
+      <div
+        className="fixed inset-0 z-50 flex flex-col justify-end sm:hidden"
+        onClick={onClose}
+      >
+        <div
+          className="max-h-[92dvh] overflow-y-auto rounded-t-2xl border-t-2 border-ink bg-card"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="h-1 w-10 rounded-full bg-ink/20" />
+          </div>
+          <div className="flex items-center justify-between px-4 pb-3 pt-1">
+            <h2 className="font-display text-lg font-bold">Kelola Izin</h2>
+            <Button variant="ghost" size="icon-sm" onClick={onClose}>
+              <X className="size-5" />
+            </Button>
+          </div>
+          <div className="px-4 pb-8">
+            {innerContent}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop: centered modal (sm+) ── */}
+      <div
+        className="fixed inset-0 z-50 hidden place-items-center bg-ink/40 p-4 sm:grid"
+        onClick={onClose}
+      >
+        <div
+          className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-ui border-2 border-ink bg-card p-6 shadow-brutal"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h2 className="font-display text-2xl font-bold">Kelola Izin</h2>
+              <span className={`inline-flex items-center gap-1 rounded-full border-2 border-ink px-3 py-1 text-sm font-bold ${user.role === "Admin" ? "bg-coral" : "bg-sky"}`}>
+                {user.role === "Admin" && <Shield className="size-3" />}
+                {user.role}
+              </span>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={onClose}>
+              <X className="size-5" />
+            </Button>
+          </div>
+          {innerContent}
+        </div>
+      </div>
+    </>
   );
 }

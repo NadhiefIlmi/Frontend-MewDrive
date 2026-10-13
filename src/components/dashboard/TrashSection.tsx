@@ -35,7 +35,19 @@ function getFileColorCls(mimeType: string): string {
   return "bg-sky";
 }
 
+// Mendukung nilai baru (dari backend: blue, green, dll.) dan nilai lama (sky, lime, dll.)
 const COLOR_MAP: Record<string, string> = {
+  // Nilai baru (backend VALID_COLORS)
+  gray:   "bg-muted",
+  purple: "bg-lilac",
+  blue:   "bg-sky",
+  green:  "bg-lime",
+  yellow: "bg-sun",
+  red:    "bg-coral",
+  pink:   "bg-pink-200",
+  orange: "bg-orange-200",
+  teal:   "bg-teal-200",
+  // Nilai lama (backward-compat untuk data yang sudah tersimpan di DB)
   default: "bg-muted",
   lilac: "bg-lilac",
   sky: "bg-sky",
@@ -93,7 +105,7 @@ function TrashedFolderRow({
 
   return (
     <div
-      className={`flex items-center gap-4 rounded-ui border-2 border-ink p-4 shadow-brutal-sm transition-colors ${
+      className={`flex items-center gap-2 rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-colors sm:gap-4 sm:p-4 ${
         selected ? "bg-sun/30" : "bg-card"
       }`}
     >
@@ -106,33 +118,37 @@ function TrashedFolderRow({
       </button>
 
       {/* Icon */}
-      <div className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink ${colorCls}`}>
-        <FolderIcon className="size-6" />
+      <div className={`grid size-10 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-12 ${colorCls}`}>
+        <FolderIcon className="size-5 sm:size-6" />
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-bold">{folder.name}</p>
-        <p className="text-sm font-medium text-muted-foreground">
-          Folder • Dihapus {formatRelative(folder.trashed_at ?? folder.updated_at)}
+        <p className="truncate text-sm font-bold sm:text-base">{folder.name}</p>
+        <p className="text-xs font-medium text-muted-foreground">
+          Folder
+          <span className="hidden xs:inline"> • Dihapus {formatRelative(folder.trashed_at ?? folder.updated_at)}</span>
+        </p>
+        <p className="text-xs font-medium text-muted-foreground xs:hidden">
+          Dihapus {formatRelative(folder.trashed_at ?? folder.updated_at)}
         </p>
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
         <button
           onClick={() => onRestore(folder)}
           title="Pulihkan"
           className="grid size-8 place-items-center rounded hover:bg-muted"
         >
-          <RotateCcw className="size-5 text-lime-600" />
+          <RotateCcw className="size-4 text-lime-600 sm:size-5" />
         </button>
         <button
           onClick={() => onDelete(folder)}
           title="Hapus permanen"
           className="grid size-8 place-items-center rounded hover:bg-muted text-red-500 hover:text-red-700"
         >
-          <Trash2 className="size-5" />
+          <Trash2 className="size-4 sm:size-5" />
         </button>
       </div>
     </div>
@@ -158,7 +174,7 @@ function TrashedFileRow({
 
   return (
     <div
-      className={`flex items-center gap-4 rounded-ui border-2 border-ink p-4 shadow-brutal-sm transition-colors ${
+      className={`flex items-center gap-2 rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-colors sm:gap-4 sm:p-4 ${
         selected ? "bg-sun/30" : "bg-card"
       }`}
     >
@@ -171,33 +187,41 @@ function TrashedFileRow({
       </button>
 
       {/* Icon */}
-      <div className={`grid size-12 shrink-0 place-items-center rounded-ui border-2 border-ink ${colorCls}`}>
-        <Icon className="size-6" />
+      <div className={`grid size-10 shrink-0 place-items-center rounded-ui border-2 border-ink sm:size-12 ${colorCls}`}>
+        <Icon className="size-5 sm:size-6" />
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-bold">{file.name}</p>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="truncate text-sm font-bold sm:text-base">{file.name}</p>
+        {/* Desktop: satu baris */}
+        <p className="hidden text-xs font-medium text-muted-foreground xs:block">
           {file.extension.toUpperCase()} • {formatBytes(file.size)} • Dihapus {formatRelative(file.trashed_at ?? file.updated_at)}
+        </p>
+        {/* Mobile: dua baris */}
+        <p className="text-xs font-medium text-muted-foreground xs:hidden">
+          {file.extension.toUpperCase()} • {formatBytes(file.size)}
+        </p>
+        <p className="text-xs font-medium text-muted-foreground xs:hidden">
+          Dihapus {formatRelative(file.trashed_at ?? file.updated_at)}
         </p>
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
         <button
           onClick={() => onRestore(file)}
           title="Pulihkan"
           className="grid size-8 place-items-center rounded hover:bg-muted"
         >
-          <RotateCcw className="size-5 text-lime-600" />
+          <RotateCcw className="size-4 text-lime-600 sm:size-5" />
         </button>
         <button
           onClick={() => onDelete(file)}
           title="Hapus permanen"
           className="grid size-8 place-items-center rounded hover:bg-muted text-red-500 hover:text-red-700"
         >
-          <Trash2 className="size-5" />
+          <Trash2 className="size-4 sm:size-5" />
         </button>
       </div>
     </div>
@@ -381,19 +405,23 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
   }
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-4 space-y-3 sm:space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {total > 0 && (
           <>
             {/* Select all / clear */}
             {selectedIds.size === total ? (
               <Button variant="secondary" size="sm" onClick={clearSelection}>
-                <Square className="mr-1 size-4" /> Batalkan semua
+                <Square className="mr-1 size-4" />
+                <span className="hidden xs:inline">Batalkan semua</span>
+                <span className="xs:hidden">Batal pilih</span>
               </Button>
             ) : (
               <Button variant="secondary" size="sm" onClick={selectAll}>
-                <CheckSquare className="mr-1 size-4" /> Pilih semua
+                <CheckSquare className="mr-1 size-4" />
+                <span className="hidden xs:inline">Pilih semua</span>
+                <span className="xs:hidden">Pilih semua</span>
               </Button>
             )}
 
@@ -415,7 +443,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
           </>
         )}
 
-        {/* Empty trash */}
+        {/* Empty trash — ml-auto di desktop, full-row saat ada banyak tombol */}
         {total > 0 && (
           <Button
             variant="destructive"
@@ -425,14 +453,15 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
             className="ml-auto gap-1"
           >
             <Trash2 className="size-4" />
-            Kosongkan Sampah
+            <span className="hidden xs:inline">Kosongkan Sampah</span>
+            <span className="xs:hidden">Kosongkan</span>
           </Button>
         )}
       </div>
 
       {/* Warning hint */}
       {total > 0 && (
-        <div className="flex items-start gap-2 rounded-ui border-2 border-ink bg-sun/30 px-4 py-3 text-sm font-medium">
+        <div className="flex items-start gap-2 rounded-ui border-2 border-ink bg-sun/30 px-3 py-2.5 text-xs font-medium sm:px-4 sm:py-3 sm:text-sm">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span>
             Item di sampah akan dihapus permanen secara otomatis setelah 30 hari.
@@ -443,16 +472,16 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
 
       {/* Empty state */}
       {total === 0 ? (
-        <div className="rounded-ui border-2 border-dashed border-ink/30 bg-card p-12 text-center">
-          <Trash2 className="mx-auto mb-3 size-10 text-muted-foreground" />
-          <p className="font-display text-lg font-bold">Sampah kosong</p>
+        <div className="rounded-ui border-2 border-dashed border-ink/30 bg-card p-8 text-center sm:p-12">
+          <Trash2 className="mx-auto mb-3 size-8 text-muted-foreground sm:size-10" />
+          <p className="font-display text-base font-bold sm:text-lg">Sampah kosong</p>
           <p className="mt-1 text-sm text-muted-foreground">
             File dan folder yang dihapus akan muncul di sini
           </p>
         </div>
       ) : (
         /* Item list */
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {allItems.map(item => {
             const key      = trashItemId(item);
             const selected = selectedIds.has(key);
@@ -489,7 +518,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
         <ConfirmDialog
           title="Hapus File Permanen"
           message={`"${deletingFile.name}" akan dihapus secara permanen dan tidak bisa dipulihkan.`}
-          confirmLabel="Hapus Permanen"
+          confirmLabel="Ya, Hapus"
           variant="destructive"
           onConfirm={confirmDeleteFile}
           onCancel={() => setDeletingFile(null)}
@@ -501,7 +530,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
         <ConfirmDialog
           title="Hapus Folder Permanen"
           message={`Folder "${deletingFolder.name}" beserta semua isinya akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.`}
-          confirmLabel="Hapus Permanen"
+          confirmLabel="Ya, Hapus"
           variant="destructive"
           onConfirm={confirmDeleteFolder}
           onCancel={() => setDeletingFolder(null)}
