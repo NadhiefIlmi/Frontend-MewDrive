@@ -458,6 +458,8 @@ function Index() {
                     onLoadMore={() => loadMoreFiles(currentParentId, filesPage + 1)}
                     onFilesChanged={() => fetchFiles(currentParentId)}
                     onFlash={flash}
+                    onUploadClick={() => fileInput.current?.click()}
+                    onFileDrop={(fileList) => onUpload(fileList)}
                   />
                 </div>
               </>

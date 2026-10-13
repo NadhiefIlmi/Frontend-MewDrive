@@ -119,13 +119,13 @@ function PublicSharePage() {
   if (err || !file) {
     const info = getErrorInfo(err ?? "not_found");
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="max-w-md text-center">
-          <div className={`mx-auto mb-6 grid size-24 place-items-center rounded-ui border-2 border-ink ${info.bg}`}>
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm text-center">
+          <div className={`mx-auto mb-6 grid size-20 place-items-center rounded-ui border-2 border-ink md:size-24 ${info.bg}`}>
             {info.icon}
           </div>
-          <h1 className="font-display text-3xl font-bold">{info.title}</h1>
-          <p className="mt-3 text-muted-foreground">{info.desc}</p>
+          <h1 className="font-display text-2xl font-bold md:text-3xl">{info.title}</h1>
+          <p className="mt-3 text-sm text-muted-foreground md:text-base">{info.desc}</p>
           <p className="mt-8 text-sm font-semibold text-muted-foreground/60">MewDrive</p>
         </div>
       </div>
@@ -139,21 +139,21 @@ function PublicSharePage() {
     <div className="min-h-screen bg-background">
       {/* ── Header ── */}
       <header className="sticky top-0 z-20 border-b-2 border-ink bg-card">
-        <div className="mx-auto flex h-16 max-w-7xl items-center px-4 md:px-8">
-          <div className="flex items-center gap-3 font-display text-xl font-bold">
-            <span className="grid size-9 place-items-center rounded-ui border-2 border-ink bg-primary shadow-brutal-sm">
+        <div className="mx-auto flex h-14 max-w-7xl items-center px-4 md:h-16 md:px-8">
+          <div className="flex items-center gap-2 font-display text-lg font-bold md:text-xl">
+            <span className="grid size-8 place-items-center rounded-ui border-2 border-ink bg-primary shadow-brutal-sm md:size-9">
               M
             </span>
-            <span className="hidden sm:inline">MewDrive</span>
+            <span>MewDrive</span>
           </div>
         </div>
       </header>
 
       {/* ── Main ── */}
-      <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
+      <main className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-12">
         {/* File info */}
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-3xl font-bold md:text-4xl">
+        <div className="mb-6 text-center md:mb-8">
+          <h1 className="break-words font-display text-xl font-bold leading-tight md:text-4xl">
             {file.name}
           </h1>
           <p className="mt-2 text-sm font-semibold text-muted-foreground">
@@ -170,7 +170,7 @@ function PublicSharePage() {
         </div>
 
         {/* Preview */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <FilePreview
             fileName={file.name}
             fileType={fileType}
@@ -179,9 +179,9 @@ function PublicSharePage() {
         </div>
 
         {/* Download button */}
-        <div className="flex justify-center">
-          <a href={downloadUrl} download={file.original_name}>
-            <Button size="lg" className="min-w-64 gap-2">
+        <div className="flex justify-center px-0 md:px-0">
+          <a href={downloadUrl} download={file.original_name} className="w-full sm:w-auto">
+            <Button size="lg" className="w-full gap-2 sm:min-w-64 sm:w-auto">
               <Download className="size-5" />
               Download File
             </Button>
@@ -189,7 +189,7 @@ function PublicSharePage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 rounded-ui border-2 border-ink bg-sun p-6 text-center">
+        <div className="mt-10 rounded-ui border-2 border-ink bg-sun p-4 text-center md:mt-12 md:p-6">
           <p className="text-sm font-bold">Shared via MewDrive</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Personal Document Management System

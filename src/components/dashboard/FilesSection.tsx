@@ -6,7 +6,7 @@
 import {
   Star, Trash2, RotateCcw, Download, MoreHorizontal,
   FileText, FileImage, FileArchive, FileSpreadsheet,
-  File, Loader2, Pencil, X, MoveRight, Share2,
+  File, Loader2, Pencil, X, MoveRight, Share2, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type FileItem } from "@/lib/api";
@@ -288,6 +288,8 @@ interface FilesSectionProps {
   onLoadMore?: () => void;
   onFilesChanged: () => void;
   onFlash: (msg: string, type?: "success" | "error" | "info") => void;
+  onUploadClick?: () => void;
+  onFileDrop?: (files: FileList) => void;
 }
 
 export function FilesSection({
@@ -298,12 +300,15 @@ export function FilesSection({
   onLoadMore,
   onFilesChanged,
   onFlash,
+  onUploadClick,
+  onFileDrop,
 }: FilesSectionProps) {
   const [previewingFile, setPreviewingFile] = useState<FileItem | null>(null);
   const [renamingFile, setRenamingFile]     = useState<FileItem | null>(null);
   const [movingFile, setMovingFile]         = useState<FileItem | null>(null);
   const [sharingFile, setSharingFile]       = useState<FileItem | null>(null);
   const [deletingFile, setDeletingFile]     = useState<FileItem | null>(null);
+  const [isDragOver, setIsDragOver]         = useState(false);
   const { can } = useAuth();
 
   const handleTrash = async (id: number) => {
@@ -349,13 +354,41 @@ export function FilesSection({
   }
 
   if (files.length === 0) {
+    // User punya akses upload → dropzone interaktif
+    if (can('create_files') && (onUploadClick || onFileDrop)) {
+      return (
+        <div
+          onClick={onUploadClick}
+          onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={e => {
+            e.preventDefault();
+            setIsDragOver(false);
+            if (e.dataTransfer.files.length && onFileDrop) {
+              onFileDrop(e.dataTransfer.files);
+            }
+          }}
+          className={`mt-6 cursor-pointer rounded-ui border-2 border-dashed p-10 text-center transition-colors select-none ${
+            isDragOver
+              ? "border-ink bg-lime/30 scale-[1.01]"
+              : "border-ink/30 bg-card hover:border-ink hover:bg-muted/50"
+          }`}
+        >
+        <Upload className="mx-auto mb-3 size-10 text-muted-foreground" />
+          <p className="font-display text-lg font-bold">Belum ada file</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isDragOver ? "Lepaskan untuk upload" : "Klik atau drag & drop file ke sini untuk upload"}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground/60">Maks. 15 MB per file</p>
+        </div>
+      );
+    }
+
+    // User tidak punya akses upload → tampil biasa, tidak bisa diklik
     return (
       <div className="mt-6 rounded-ui border-2 border-dashed border-ink/30 bg-card p-10 text-center">
         <Download className="mx-auto mb-3 size-10 text-muted-foreground" />
         <p className="font-display text-lg font-bold">Belum ada file</p>
-        {can('create_files') && (
-          <p className="mt-1 text-sm text-muted-foreground">Upload file pertamamu menggunakan tombol di atas</p>
-        )}
       </div>
     );
   }

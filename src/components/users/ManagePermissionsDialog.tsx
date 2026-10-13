@@ -54,6 +54,7 @@ export function ManagePermissionsDialog({
 }) {
   const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
+  const [activePreset, setActivePreset] = useState<'Admin' | 'User' | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,14 +82,6 @@ export function ManagePermissionsDialog({
     load();
   }, [user.id]);
 
-  const togglePermission = (name: string) => {
-    setSelectedNames(prev => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
-
   const applyPreset = (role: 'Admin' | 'User') => {
     const adminPerms = new Set(allPermissions.map(p => p.name));
     const userPerms  = new Set(
@@ -97,6 +90,17 @@ export function ManagePermissionsDialog({
         .map(p => p.name)
     );
     setSelectedNames(role === 'Admin' ? adminPerms : userPerms);
+    setActivePreset(role);
+  };
+
+  const togglePermission = (name: string) => {
+    setSelectedNames(prev => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+    // Reset active preset kalau user manual toggle
+    setActivePreset(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,10 +156,30 @@ export function ManagePermissionsDialog({
           <div className="rounded-ui border-2 border-ink bg-background p-3">
             <h4 className="mb-2.5 font-display text-sm font-bold">Preset Cepat</h4>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => applyPreset('User')} className="flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset('User')}
+                className={`flex-1 transition-colors ${
+                  activePreset === 'User'
+                    ? "bg-sky border-ink shadow-brutal-sm font-bold"
+                    : "hover:bg-sky/30"
+                }`}
+              >
                 <User className="mr-1.5 size-4" /> Standar
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => applyPreset('Admin')} className="flex-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset('Admin')}
+                className={`flex-1 transition-colors ${
+                  activePreset === 'Admin'
+                    ? "bg-coral border-ink shadow-brutal-sm font-bold"
+                    : "hover:bg-coral/30"
+                }`}
+              >
                 <Shield className="mr-1.5 size-4" /> Admin
               </Button>
             </div>

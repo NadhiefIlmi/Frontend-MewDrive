@@ -28,7 +28,7 @@ export function AddUserDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"Admin" | "User">("User");
-  const [storageQuota, setStorageQuota] = useState(20);
+  const [storageQuota, setStorageQuota] = useState<number | "">(20);
   const [status, setStatus] = useState<"Active" | "Disabled">("Active");
   const [showPassword, setShowPassword] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
@@ -53,7 +53,7 @@ export function AddUserDialog({
       email: email.trim(),
       password,
       role,
-      storageQuota,
+      storageQuota: storageQuota === "" ? 1 : storageQuota,
       status,
       initial,
       color: colors[Math.floor(Math.random() * colors.length)]!,
@@ -70,7 +70,7 @@ export function AddUserDialog({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Muhammad Nadhif"
+          placeholder="Contoh: John Doe"
           className="w-full rounded-ui border-2 border-ink bg-background px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         />
       </div>
@@ -79,10 +79,10 @@ export function AddUserDialog({
       <div>
         <label className="mb-1.5 block text-sm font-bold">Email</label>
         <input
-          type="email"
+          type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="nadhif@example.com"
+          placeholder="contoh@email.com"
           className="w-full rounded-ui border-2 border-ink bg-background px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         />
       </div>
@@ -137,9 +137,22 @@ export function AddUserDialog({
         <input
           type="number"
           value={storageQuota}
-          onChange={(e) => setStorageQuota(Number(e.target.value))}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "") {
+              setStorageQuota("");
+            } else {
+              const num = parseInt(val, 10);
+              if (!isNaN(num)) setStorageQuota(num);
+            }
+          }}
+          onBlur={() => {
+            // Kalau kosong saat blur, reset ke default 1
+            if (storageQuota === "") setStorageQuota(1);
+          }}
           min="1"
           max="1000"
+          placeholder="20"
           className="w-full rounded-ui border-2 border-ink bg-background px-4 py-2.5 font-semibold outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         />
       </div>

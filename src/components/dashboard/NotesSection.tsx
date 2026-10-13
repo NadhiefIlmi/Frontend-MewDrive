@@ -92,13 +92,14 @@ function NoteEditor({
   const [color, setColor] = useState(note.color ?? "bg-sun");
 
   return (
-    <div className={`rounded-ui border-2 border-ink ${color} p-4 shadow-brutal sm:p-5`}>
-      {/* Toolbar atas */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <div className={`rounded-ui border-2 border-ink ${color} p-3 shadow-brutal sm:p-5`}>
+      {/* Toolbar atas — stack di mobile, sejajar di sm+ */}
+      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
         <ColorPicker selected={color} onChange={setColor} />
         <div className="flex gap-2">
           <Button
             size="sm"
+            className="flex-1 sm:flex-none"
             onClick={() => onSave({ title, body, color })}
             disabled={saving}
           >
@@ -107,7 +108,7 @@ function NoteEditor({
               : <><Check className="size-4" /> Simpan</>
             }
           </Button>
-          <Button size="sm" variant="ghost" onClick={onCancel} disabled={saving}>
+          <Button size="sm" variant="ghost" className="flex-1 sm:flex-none" onClick={onCancel} disabled={saving}>
             <X className="size-4" /> Batal
           </Button>
         </div>
@@ -119,7 +120,7 @@ function NoteEditor({
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Judul catatan..."
-        className="mb-3 w-full bg-transparent font-display text-lg font-bold outline-none placeholder:text-ink/50 sm:text-xl"
+        className="mb-3 w-full bg-transparent font-display text-base font-bold outline-none placeholder:text-ink/50 sm:text-xl"
       />
       <RichTextEditor
         content={body}
@@ -291,7 +292,7 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
   // ── Render: editor aktif ───────────────────────────────────────────────────
   if (editingNote !== null) {
     return (
-      <div className="mt-6 max-w-2xl sm:mt-10">
+      <div className="mt-4 w-full sm:mt-10 sm:max-w-2xl">
         <p className="mb-3 text-sm font-bold uppercase text-muted-foreground">
           {editingNote.id ? "Edit Catatan" : "Catatan Baru"}
         </p>
