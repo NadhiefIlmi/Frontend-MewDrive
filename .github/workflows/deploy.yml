@@ -37,7 +37,7 @@ jobs:
             npm run build
 
             echo ">>> Verifikasi build output ada"
-            ls -la .output/
+            ls -la dist/
 
             echo ">>> Reload frontend tanpa downtime"
             pm2 reload mewdrive-frontend --update-env
