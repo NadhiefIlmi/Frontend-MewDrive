@@ -131,15 +131,19 @@ export function HomeSection({
         </div>
 
         {/* Stats Card */}
-        <div className="relative overflow-hidden rounded-ui border-2 border-ink bg-lime p-5 shadow-brutal">
+        <div className="relative rounded-ui border-2 border-ink bg-lime p-5 shadow-brutal">
           <p className="text-sm font-bold uppercase">Ringkasan</p>
 
-          {/* Angka utama — total folder */}
-          <div className="mt-2">
+          {/* Angka utama — total folder, GIF absolute di kanan */}
+          <div className="relative mt-2">
             <p className="font-display text-5xl font-bold leading-none">
               {foldersLoading ? <Loader2 className="size-7 animate-spin" /> : totalFolders}
             </p>
             <p className="mt-1 font-semibold text-foreground/70">folder tersimpan</p>
+            {/* GIF mobile — absolute di kanan, tidak mendorong layout */}
+            <div className="absolute -top-2 right-0 h-28 w-28 sm:hidden">
+              <img src={catLoader} alt="Cat Animation" className="size-full object-contain" />
+            </div>
           </div>
 
           {/* Tombol navigasi + angka */}
@@ -166,9 +170,9 @@ export function HomeSection({
             </button>
           </div>
 
-          {/* Cat animation */}
-          <div className="absolute bottom-2 right-4 hidden h-48 w-48 sm:block">
-            <img src={catLoader} alt="Cat Animation Desktop" className="size-full object-contain" />
+          {/* Cat animation — desktop only (absolute pojok kanan bawah) */}
+          <div className="absolute -bottom-6 -right-4 hidden h-48 w-48 sm:block">
+            <img src={catLoader} alt="Cat Animation" className="size-full object-contain" />
           </div>
         </div>
       </section>
