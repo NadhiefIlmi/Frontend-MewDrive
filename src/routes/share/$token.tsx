@@ -12,6 +12,7 @@ import { Download, Link2Off, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type PublicShareInfo } from "@/lib/api";
 import { FilePreview } from "../dialogs/-FilePreview";
+import loadingCat from "@/assets/loading_cat.gif";
 
 export const Route = createFileRoute("/share/$token")({
   component: PublicSharePage,
@@ -107,9 +108,12 @@ function PublicSharePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="mx-auto size-16 animate-spin rounded-full border-4 border-ink border-t-transparent" />
-          <p className="mt-4 font-bold">Memuat file...</p>
+        <div className="flex flex-col items-center justify-center p-4">
+          <img
+            src={loadingCat}
+            alt="Memuat file..."
+            className="h-44 w-auto object-contain max-w-[280px]"
+          />
         </div>
       </div>
     );

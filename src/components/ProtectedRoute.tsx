@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/contexts/AuthContext';
 
+import loadingCat from '@/assets/loading_cat.gif';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -25,9 +27,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-4 border-ink border-t-transparent" />
-          <p className="font-semibold">Loading...</p>
+        <div className="flex flex-col items-center justify-center p-4">
+          <img
+            src={loadingCat}
+            alt="Loading..."
+            className="h-44 w-auto object-contain max-w-[280px]"
+          />
         </div>
       </div>
     );
