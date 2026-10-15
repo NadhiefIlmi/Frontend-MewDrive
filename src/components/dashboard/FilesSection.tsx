@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type FileItem } from "@/lib/api";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FilePreviewDialog } from "@/components/dashboard/FilePreviewDialog";
 import { MoveDialog } from "@/components/dashboard/MoveDialog";
 import { ShareLinkDialog } from "@/components/dashboard/ShareLinkDialog";
@@ -147,7 +147,20 @@ function FileRow({
   const Icon  = getFileIcon(file.mime_type);
   const color = getFileColor(file.mime_type);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuUp, setMenuUp]     = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const { can } = useAuth();
+
+  const handleMenuToggle = () => {
+    if (!menuOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // Hitung ruang yang tersisa di bawah tombol sampai batas layar
+      // 270px = tinggi menu (~210px) + bottom nav bar (~64px) + sedikit buffer
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setMenuUp(spaceBelow < 270);
+    }
+    setMenuOpen(v => !v);
+  };
 
   return (
     <div className="flex items-center gap-3 rounded-ui border-2 border-ink bg-card p-3 shadow-brutal-sm sm:gap-4 sm:p-4">
@@ -218,13 +231,13 @@ function FileRow({
         ) : (
           (can('edit_files') || can('share_files') || can('delete_files')) && (
             <div className="relative">
-              <Button variant="ghost" size="icon-sm" onClick={() => setMenuOpen(v => !v)}>
+              <Button variant="ghost" size="icon-sm" ref={btnRef} onClick={handleMenuToggle}>
                 <MoreHorizontal className="size-4 sm:size-5" />
               </Button>
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-8 z-20 min-w-[150px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal">
+                  <div className={`absolute right-0 z-20 min-w-[150px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal ${menuUp ? 'bottom-8' : 'top-8'}`}>
                     {/* Download di dalam menu untuk mobile */}
                     {can('download_files') && (
                       <a

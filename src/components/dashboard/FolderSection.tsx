@@ -3,7 +3,7 @@
  * List folder + CRUD (create, rename, trash) dengan icon picker — terhubung ke API Task 4
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Folder, FolderHeart, FolderOpen,
   MoreHorizontal, Pencil, Trash2, Star, StarOff, Loader2, X, MoveRight,
@@ -374,6 +374,19 @@ export function FolderCard({
     : getFolderColor(index);
   const isMenuOpen = menuOpenId === folder.id;
   const { can } = useAuth();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuUp, setMenuUp] = useState(false);
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isMenuOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // 270px = tinggi menu (~200px) + bottom nav bar (~64px) + buffer
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setMenuUp(spaceBelow < 270);
+    }
+    onMenuToggle(isMenuOpen ? null : folder.id);
+  };
 
   return (
     <div
@@ -388,9 +401,10 @@ export function FolderCard({
       <div className="flex w-full items-start justify-between">
         <FolderIcon className="size-7 sm:size-9" />
         <button
+          ref={btnRef}
           type="button"
           className="grid size-6 place-items-center rounded-ui border-2 border-ink bg-card/80 hover:bg-card sm:size-7"
-          onClick={e => { e.stopPropagation(); onMenuToggle(isMenuOpen ? null : folder.id); }}
+          onClick={handleMenuToggle}
           data-folder-menu
         >
           <MoreHorizontal className="size-3.5 sm:size-4" />
@@ -409,7 +423,7 @@ export function FolderCard({
       {/* Dropdown menu */}
       {isMenuOpen && (
         <div
-          className="absolute right-2 top-10 z-20 min-w-[160px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal"
+          className={`absolute right-2 z-20 min-w-[160px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal ${menuUp ? 'bottom-10' : 'top-10'}`}
           onClick={e => e.stopPropagation()}
           data-folder-menu
         >
