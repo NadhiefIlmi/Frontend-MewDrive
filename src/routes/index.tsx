@@ -388,7 +388,7 @@ function Index() {
           userRole={authUser?.role}
         />
 
-        <main className="min-w-0 flex-1 pb-16 lg:pb-0">
+        <main className="min-w-0 flex-1 pb-20 lg:pb-0">
           <DashboardHeader
             query={query}
             onQueryChange={setQuery}

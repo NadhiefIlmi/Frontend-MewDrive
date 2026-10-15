@@ -12,7 +12,6 @@ import {
   Settings,
   HardDrive,
   LogOut,
-  Menu,
   Check,
   Shield,
 } from "lucide-react";
@@ -72,14 +71,6 @@ export function DashboardHeader({
 
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b-2 border-ink bg-background px-3 sm:h-20 md:px-8">
         <div className="mr-3 flex min-w-0 flex-1 items-center gap-2 sm:mr-6 sm:gap-3">
-          <Button
-            variant="icon"
-            className="hidden shrink-0 lg:flex"
-            aria-label="Buka navigasi"
-            onClick={onSidebarToggle}
-          >
-            <Menu />
-          </Button>
           <div className="min-w-0 flex-1">
             <SearchBar
               placeholder={
