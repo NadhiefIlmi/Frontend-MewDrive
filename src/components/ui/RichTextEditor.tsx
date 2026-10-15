@@ -23,6 +23,9 @@ import {
   AlignLeft, AlignCenter, AlignRight,
   Highlighter, Table as TableIcon,
   Minus, Undo2, Redo2,
+  ArrowLeftToLine, ArrowRightToLine,
+  ArrowUpToLine, ArrowDownToLine,
+  Trash2, Columns2, Rows2,
 } from "lucide-react";
 
 interface RichTextEditorProps {
@@ -193,6 +196,44 @@ export function RichTextEditor({
           <ToolbarBtn title="Insert Table" active={editor.isActive("table")} onClick={addTable}>
             <TableIcon className="size-3.5" />
           </ToolbarBtn>
+
+          {/* Table controls — hanya muncul saat kursor berada di dalam tabel */}
+          {editor.isActive("table") && (
+            <>
+              <Divider />
+
+              {/* Kolom */}
+              <ToolbarBtn title="Tambah Kolom Sebelum" onClick={() => editor.chain().focus().addColumnBefore().run()}>
+                <ArrowLeftToLine className="size-3.5" />
+              </ToolbarBtn>
+              <ToolbarBtn title="Tambah Kolom Sesudah" onClick={() => editor.chain().focus().addColumnAfter().run()}>
+                <ArrowRightToLine className="size-3.5" />
+              </ToolbarBtn>
+              <ToolbarBtn title="Hapus Kolom" onClick={() => editor.chain().focus().deleteColumn().run()}>
+                <Columns2 className="size-3.5" />
+              </ToolbarBtn>
+
+              <Divider />
+
+              {/* Baris */}
+              <ToolbarBtn title="Tambah Baris Sebelum" onClick={() => editor.chain().focus().addRowBefore().run()}>
+                <ArrowUpToLine className="size-3.5" />
+              </ToolbarBtn>
+              <ToolbarBtn title="Tambah Baris Sesudah" onClick={() => editor.chain().focus().addRowAfter().run()}>
+                <ArrowDownToLine className="size-3.5" />
+              </ToolbarBtn>
+              <ToolbarBtn title="Hapus Baris" onClick={() => editor.chain().focus().deleteRow().run()}>
+                <Rows2 className="size-3.5" />
+              </ToolbarBtn>
+
+              <Divider />
+
+              {/* Hapus tabel */}
+              <ToolbarBtn title="Hapus Tabel" onClick={() => editor.chain().focus().deleteTable().run()}>
+                <Trash2 className="size-3.5" />
+              </ToolbarBtn>
+            </>
+          )}
         </div>
       )}
 

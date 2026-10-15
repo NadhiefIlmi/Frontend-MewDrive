@@ -1,4 +1,10 @@
-import { FileText, FileArchive, Image as ImageIcon, Video, Music, File } from "lucide-react";
+import { FileText, FileArchive, Image as ImageIcon, Video, Music, File, ExternalLink } from "lucide-react";
+
+// Deteksi mobile browser — Chrome Android tidak bisa render PDF di iframe
+function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
 
 type FilePreviewProps = {
   fileName: string;
@@ -39,11 +45,35 @@ export function FilePreview({ fileName, fileType, fileUrl }: FilePreviewProps) {
     return (
       <div className="overflow-hidden rounded-ui border-2 border-ink bg-card shadow-brutal">
         {fileUrl ? (
-          <iframe
-            src={fileUrl}
-            className="h-[600px] w-full"
-            title={fileName}
-          />
+          isMobile() ? (
+            // Mobile: Chrome Android tidak support PDF di iframe — tampilkan fallback
+            <div className="flex min-h-64 flex-col items-center justify-center gap-4 bg-coral/10 p-8">
+              <div className="grid size-16 place-items-center rounded-ui border-2 border-ink bg-coral/20">
+                <FileText className="size-8" />
+              </div>
+              <div className="text-center">
+                <p className="font-bold">Preview PDF</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Preview inline tidak didukung di browser mobile.
+                </p>
+              </div>
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-ui border-2 border-ink bg-card px-4 py-2 text-sm font-bold shadow-brutal-sm transition-colors hover:bg-muted"
+              >
+                <ExternalLink className="size-4" />
+                Buka PDF
+              </a>
+            </div>
+          ) : (
+            <iframe
+              src={fileUrl}
+              className="h-[600px] w-full"
+              title={fileName}
+            />
+          )
         ) : (
           <div className="flex min-h-96 items-center justify-center bg-coral p-8">
             <div className="text-center">

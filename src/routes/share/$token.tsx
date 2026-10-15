@@ -112,7 +112,7 @@ function PublicSharePage() {
           <img
             src={loadingCat}
             alt="Memuat file..."
-            className="h-44 w-auto object-contain max-w-[280px]"
+            className="h-44 w-auto object-contain max-w-[280px] dark:mix-blend-screen dark:invert"
           />
         </div>
       </div>

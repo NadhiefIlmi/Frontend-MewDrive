@@ -21,18 +21,39 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+/**
+ * Baca tema awal dari DOM — bukan dari localStorage langsung.
+ * Inline script di __root.tsx sudah apply class ke <html> sebelum React hydrate,
+ * jadi kita baca dari sana supaya initial state cocok dengan DOM → tidak hydration mismatch.
+ */
+function getInitialTheme(): Theme {
+  if (typeof document === "undefined") return "light"; // SSR fallback
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
 
-  // Load dari localStorage saat mount
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Init dari DOM langsung — bukan "light" hardcoded
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  // Sync ulang saat mount untuk handle kasus edge (localStorage berubah di tab lain, dll)
   useEffect(() => {
     const saved = window.localStorage.getItem("MewDrive-theme");
-    const initial: Theme = saved === "light" || saved === "dark" ? saved : "light";
-    setTheme(initial);
-    applyTheme(initial);
+    // Inline script support "system" tapi ThemeContext hanya light/dark
+    // Resolve "system" ke nilai konkret berdasarkan prefers-color-scheme
+    let resolved: Theme;
+    if (saved === "dark") {
+      resolved = "dark";
+    } else if (saved === "light") {
+      resolved = "light";
+    } else {
+      // "system" atau nilai lain → ikut OS
+      resolved = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    setTheme(resolved);
+    applyTheme(resolved);
+    // Normalize localStorage ke light/dark supaya tidak ada "system" tersisa
+    window.localStorage.setItem("MewDrive-theme", resolved);
   }, []);
-
-  // (system sync removed — app only supports light/dark)
 
   const changeTheme = (next: Theme) => {
     setTheme(next);

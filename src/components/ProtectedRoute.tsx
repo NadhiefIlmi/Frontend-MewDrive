@@ -31,7 +31,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           <img
             src={loadingCat}
             alt="Loading..."
-            className="h-44 w-auto object-contain max-w-[280px]"
+            className="h-44 w-auto object-contain max-w-[280px] dark:mix-blend-screen dark:invert"
           />
         </div>
       </div>
