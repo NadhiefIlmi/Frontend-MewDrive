@@ -14,6 +14,7 @@ import {
   LogOut,
   Check,
   Shield,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MenuItem } from "./MenuItem";
@@ -24,6 +25,7 @@ import type { Section } from "@/types/dashboard";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import type { FileItem } from "@/lib/api";
 import type { ApiFolderItem } from "@/types/dashboard";
+import { ChangePasswordDialog } from "@/components/dashboard/ChangePasswordDialog";
 
 interface DashboardHeaderProps {
   query: string;
@@ -50,6 +52,7 @@ export function DashboardHeader({
   const { user, logout } = useAuth();
   const { theme, changeTheme } = useTheme();
   const [openMenu, setOpenMenu] = useState<"theme" | "profile" | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const toggleMenu = (menu: "theme" | "profile") => {
     setOpenMenu((current) => (current === menu ? null : menu));
@@ -177,6 +180,14 @@ export function DashboardHeader({
                     onSectionChange("storage");
                   }}
                 />
+                <MenuItem
+                  Icon={KeyRound}
+                  label="Ganti Password"
+                  onClick={() => {
+                    setOpenMenu(null);
+                    setShowChangePassword(true);
+                  }}
+                />
                 <button
                   onClick={handleLogout}
                   className="flex w-full items-center gap-3 rounded-ui px-3 py-2 text-left text-sm font-semibold hover:bg-coral"
@@ -188,6 +199,11 @@ export function DashboardHeader({
           </div>
         </div>
       </header>
+
+      {/* Dialog ganti password */}
+      {showChangePassword && (
+        <ChangePasswordDialog onClose={() => setShowChangePassword(false)} />
+      )}
     </>
   );
 }

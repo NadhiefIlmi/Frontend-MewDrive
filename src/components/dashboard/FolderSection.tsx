@@ -376,10 +376,12 @@ export function FolderCard({
   const { can } = useAuth();
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(folder)}
-      className={`group relative flex h-28 w-full flex-col items-start justify-between rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-transform hover:-translate-y-1 text-left sm:h-36 sm:p-4 ${colorCls}`}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(folder); } }}
+      className={`group relative flex h-28 w-full cursor-pointer flex-col items-start justify-between rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-transform hover:-translate-y-1 text-left sm:h-36 sm:p-4 ${colorCls}`}
       aria-label={`Buka folder ${folder.name}`}
     >
       {/* Top row */}
@@ -448,7 +450,7 @@ export function FolderCard({
           )}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 

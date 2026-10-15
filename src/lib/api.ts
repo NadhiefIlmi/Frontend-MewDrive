@@ -211,6 +211,7 @@ export interface UpdateNoteRequest {
 export interface ShareLink {
   id: number;
   token: string;
+  slug: string | null;
   file_id: number;
   is_active: boolean;
   expires_at: string | null;
@@ -230,6 +231,7 @@ export interface CreateShareLinkRequest {
 
 export interface PublicShareInfo {
   token: string;
+  slug: string | null;
   file_id: number;
   name: string;
   original_name: string;
@@ -397,6 +399,14 @@ class ApiClient {
     return this.request<null>(`/users/${id}/reset-password`, {
       method: 'POST',
       body: JSON.stringify({ new_password }),
+    });
+  }
+
+  /** Ganti password sendiri — butuh password lama untuk verifikasi */
+  async changePassword(current_password: string, new_password: string): Promise<ApiResponse<null>> {
+    return this.request<null>('/users/me/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ current_password, new_password }),
     });
   }
 
@@ -711,6 +721,13 @@ class ApiClient {
 
   async deleteShareLink(id: number): Promise<ApiResponse<{ id: number; token: string }>> {
     return this.request(`/share/${id}`, { method: 'DELETE' });
+  }
+
+  async updateShareLinkSlug(id: number, slug: string | null): Promise<ApiResponse<ShareLink>> {
+    return this.request<ShareLink>(`/share/${id}/slug`, {
+      method: 'PATCH',
+      body: JSON.stringify({ slug }),
+    });
   }
 
   /** Public endpoint — tidak butuh token JWT */
