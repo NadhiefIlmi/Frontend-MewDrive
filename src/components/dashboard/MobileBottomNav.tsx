@@ -15,7 +15,7 @@
  *  "Lainnya"   — Sampah (+ Users untuk admin)
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Grid2X2,
   Folder,
@@ -31,39 +31,8 @@ import type { Section } from "@/types/dashboard";
 import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Layout constants (px) ────────────────────────────────────────────────────
-const NAV_H    = 64;          // nav bar height
-const FAB_D    = 52;          // FAB diameter
-const FAB_R    = FAB_D / 2;  // 26
-const CORNER_R = 20;         // top-left / top-right rounded corners
-
-// ─── Responsive width hook ────────────────────────────────────────────────────
-function useWindowWidth() {
-  const [w, setW] = useState(390); // iPhone fallback for SSR
-  useEffect(() => {
-    const update = () => setW(window.innerWidth);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-  return w;
-}
-
-// ─── SVG path builder ─────────────────────────────────────────────────────────
-// Plain rectangle with rounded top corners — NO notch.
-// Top border is a straight continuous line; FAB sits on top of it.
-function buildNavPath(totalWidth: number): string {
-  const cr = CORNER_R;
-  return [
-    `M ${cr},0`,
-    `H ${totalWidth - cr}`,
-    `Q ${totalWidth},0 ${totalWidth},${cr}`,
-    `V ${NAV_H}`,
-    `H 0`,
-    `V ${cr}`,
-    `Q 0,0 ${cr},0`,
-    `Z`,
-  ].join(" ");
-}
+const NAV_H = 64; // nav bar height
+const FAB_D = 52; // FAB diameter
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MobileBottomNavProps {
@@ -76,10 +45,10 @@ interface MobileBottomNavProps {
 }
 
 const NAV_ITEMS = [
-  { Icon: Grid2X2,    label: "Beranda", id: "home"      as Section },
-  { Icon: Folder,     label: "Dokumen", id: "files"     as Section },
-  { Icon: Star,       label: "Favorit", id: "favorites" as Section },
-  { Icon: StickyNote, label: "Catatan", id: "notes"     as Section },
+  { Icon: Grid2X2,    label: "Beranda", id: "home"      as Section, activeBg: "bg-lime" },
+  { Icon: Folder,     label: "Dokumen", id: "files"     as Section, activeBg: "bg-sky" },
+  { Icon: Star,       label: "Favorit", id: "favorites" as Section, activeBg: "bg-sun" },
+  { Icon: StickyNote, label: "Catatan", id: "notes"     as Section, activeBg: "bg-lilac" },
 ] as const;
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -95,15 +64,8 @@ export function MobileBottomNav({
   const { can }   = useAuth();
   const canCreate = can("create_files");
   const isAdmin   = userRole === "ADMIN";
-  const winW      = useWindowWidth();
-
   const handleAction = (fn: () => void) => { setFabOpen(false); fn(); };
   const handleNav    = (s: Section)     => { setFabOpen(false); onSectionChange(s); };
-
-  const navPath = buildNavPath(winW);
-
-  // FAB action sheet sits above the FAB: NAV_H (bar) + FAB_R (half of FAB above bar) + 8px gap
-  const sheetBottom = NAV_H + FAB_R + 8;
 
   return (
     <>
@@ -119,7 +81,7 @@ export function MobileBottomNav({
       {fabOpen && (
         <div
           className="fixed left-1/2 z-50 w-52 -translate-x-1/2 rounded-ui border-2 border-ink bg-card p-1.5 shadow-brutal lg:hidden"
-          style={{ bottom: sheetBottom }}
+          style={{ bottom: "calc(max(14px, env(safe-area-inset-bottom, 14px)) + 64px + 16px)" }}
         >
           {/* Buat baru */}
           {canCreate && (
@@ -196,57 +158,40 @@ export function MobileBottomNav({
       )}
 
       {/* ── Nav bar container ──────────────────────────────────────────────── */}
+      {/* ── Floating Nav Bar container ────────────────────────────────────── */}
       <div
-        className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
-        style={{ height: NAV_H }}
+        className="fixed inset-x-3.5 z-40 max-w-lg mx-auto lg:hidden"
+        style={{ bottom: "max(14px, env(safe-area-inset-bottom, 14px))" }}
       >
-        {/* SVG: nav bar background + border + notch cutout
-            viewBox matches winW exactly → arc renders 1:1, no distortion      */}
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 text-ink"
-          width="100%"
-          height={NAV_H}
-          viewBox={`0 0 ${winW} ${NAV_H}`}
+        <nav
+          aria-label="Navigasi bawah"
+          className="relative flex items-center rounded-[28px] border-2 border-ink bg-card px-2 shadow-brutal"
+          style={{ height: NAV_H }}
         >
-          <path
-            d={navPath}
-            className="fill-card"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
+          {/* FAB: centre sits lowered on floating bar (protrudes only 6px above) */}
+          <button
+            aria-label={fabOpen ? "Tutup menu" : "Menu tambah & lainnya"}
+            onClick={() => setFabOpen((p) => !p)}
+            className={`absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink shadow-brutal transition-all duration-300 active:scale-95 ${
+              fabOpen ? "bg-coral" : "bg-lime"
+            }`}
+            style={{ top: 12, width: FAB_D, height: FAB_D }}
+          >
+            <Plus
+              className="m-auto size-6 transition-transform duration-300"
+              style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}
+            />
+          </button>
 
-        {/* FAB: centre sits exactly ON the nav bar top border (top:0 + -translate-y-1/2).
-            Its own circular 2px border aligns with the nav bar border — visually seamless. */}
-        <button
-          aria-label={fabOpen ? "Tutup menu" : "Menu tambah & lainnya"}
-          onClick={() => setFabOpen((p) => !p)}
-          className={`absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink shadow-brutal transition-all duration-300 active:scale-95 ${
-            fabOpen ? "bg-coral" : "bg-lime"
-          }`}
-          style={{ top: 0, width: FAB_D, height: FAB_D }}
-        >
-          <Plus
-            className="m-auto size-6 transition-transform duration-300"
-            style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}
-          />
-        </button>
-
-        {/* Nav items — left 2 + spacer + right 2 */}
-        <div
-          className="relative flex h-full items-center px-2"
-          style={{ paddingTop: 4 }} // slight push-down to center below notch
-        >
           {/* Left items */}
           <div className="flex flex-1 items-center justify-around">
-            {NAV_ITEMS.slice(0, 2).map(({ Icon, label, id }) => (
+            {NAV_ITEMS.slice(0, 2).map(({ Icon, label, id, activeBg }) => (
               <NavItem
                 key={id}
                 Icon={Icon}
                 label={label}
                 active={activeSection === id}
+                activeBg={activeBg}
                 onClick={() => { setFabOpen(false); onSectionChange(id); }}
               />
             ))}
@@ -257,65 +202,59 @@ export function MobileBottomNav({
 
           {/* Right items */}
           <div className="flex flex-1 items-center justify-around">
-            {NAV_ITEMS.slice(2).map(({ Icon, label, id }) => (
+            {NAV_ITEMS.slice(2).map(({ Icon, label, id, activeBg }) => (
               <NavItem
                 key={id}
                 Icon={Icon}
                 label={label}
                 active={activeSection === id}
+                activeBg={activeBg}
                 onClick={() => { setFabOpen(false); onSectionChange(id); }}
               />
             ))}
           </div>
-        </div>
+        </nav>
       </div>
     </>
   );
 }
 
 // ─── NavItem sub-component ───────────────────────────────────────────────────
-// Opsi C: icon always visible, label slide-up + fade-in only when active
+// Icon-only with unique neobrutal signature colors + jelly bounce animation
 function NavItem({
   Icon,
   label,
   active,
+  activeBg,
   onClick,
 }: {
   Icon: React.ElementType;
   label: string;
   active: boolean;
+  activeBg: string;
   onClick: () => void;
 }) {
   return (
     <button
+      type="button"
       aria-label={label}
       aria-current={active ? "page" : undefined}
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-0 py-1"
+      className="relative grid place-items-center p-1 outline-none transition-transform active:scale-90"
     >
       {/* Icon container */}
       <span
-        className={`grid place-items-center rounded-ui transition-all duration-200 ${
+        className={`grid size-10 place-items-center rounded-ui transition-all duration-200 ${
           active
-            ? "size-9 border-2 border-ink bg-lilac shadow-brutal-sm"
-            : "size-9 hover:bg-accent"
+            ? `border-2 border-ink ${activeBg} text-ink shadow-brutal-sm animate-jelly`
+            : "text-muted-foreground hover:bg-accent hover:text-foreground"
         }`}
       >
         <Icon
-          className={`transition-all duration-200 ${active ? "size-[22px]" : "size-6"}`}
+          className={`transition-all duration-200 ${
+            active ? "size-5 stroke-[2.3px]" : "size-5 stroke-[1.8px]"
+          }`}
         />
-      </span>
-
-      {/* Label: hidden (max-h 0, opacity 0, shifted down) when idle
-              visible (max-h 16px, opacity 1, back to position) when active */}
-      <span
-        className={`overflow-hidden text-[10px] font-bold leading-none transition-all duration-200 ease-out ${
-          active
-            ? "mt-0.5 max-h-4 translate-y-0 opacity-100"
-            : "max-h-0 translate-y-1 opacity-0"
-        }`}
-      >
-        {label}
       </span>
     </button>
   );
