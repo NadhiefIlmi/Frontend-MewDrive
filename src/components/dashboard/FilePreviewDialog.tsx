@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import {
   X, Download, FileText, FileImage,
-  File, Loader2, AlertCircle,
+  File, Loader2, AlertCircle, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type FileItem } from "@/lib/api";
@@ -109,6 +109,36 @@ function PdfPreview({ url }: { url: string }) {
       <span className="font-semibold">Gagal memuat PDF</span>
     </div>
   );
+
+  // Chrome mobile tidak bisa render PDF di dalam iframe.
+  // Script-src 'none' adalah CSP internal Chrome PDF viewer — tidak bisa di-override.
+  // Solusi: deteksi mobile, tampilkan tombol buka/unduh PDF.
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col items-center gap-5 rounded-ui border-2 border-ink bg-card p-8 text-center">
+        <div className="grid size-16 place-items-center rounded-ui border-2 border-ink bg-sun shadow-brutal">
+          <FileText className="size-8" />
+        </div>
+        <div>
+          <p className="font-bold">Preview PDF tidak tersedia di mobile</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ketuk tombol di bawah untuk membuka atau mengunduh PDF
+          </p>
+        </div>
+        <a
+          href={blobUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-ui border-2 border-ink bg-lime px-4 py-2.5 font-bold shadow-brutal transition-all active:scale-95"
+        >
+          <ExternalLink className="size-4" />
+          Buka PDF
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[70vh] rounded-ui border-2 border-ink overflow-hidden">
