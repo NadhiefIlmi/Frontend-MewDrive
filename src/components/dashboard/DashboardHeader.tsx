@@ -74,7 +74,7 @@ export function DashboardHeader({
         <div className="mr-3 flex min-w-0 flex-1 items-center gap-2 sm:mr-6 sm:gap-3">
           <Button
             variant="icon"
-            className="shrink-0 lg:hidden"
+            className="hidden shrink-0 lg:flex"
             aria-label="Buka navigasi"
             onClick={onSidebarToggle}
           >

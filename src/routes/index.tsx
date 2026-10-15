@@ -8,6 +8,7 @@ import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { api, type FileItem } from "@/lib/api";
 import { apiUserToUser, gbToBytes, type ApiFolderItem } from "@/types/dashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -275,6 +276,14 @@ function Index() {
 
   const newFolderFromSidebar = () => { selectSection("files"); setShowCreateFolder(true); };
 
+  // Upload dari mobile bottom nav: pindah ke section files dulu biar user tau
+  // file tersimpan di mana, baru trigger file picker
+  const uploadFromMobile = () => {
+    selectSection("files");
+    // Beri sedikit jeda supaya section render dulu sebelum dialog file terbuka
+    setTimeout(() => fileInput.current?.click(), 80);
+  };
+
   // ─── Note handlers ────────────────────────────────────────────────────────
   const newNote = () => {
     selectSection("notes");
@@ -368,7 +377,18 @@ function Index() {
           storageQuota={Number(authUser?.storage_quota ?? 0)}
         />
 
-        <main className="min-w-0 flex-1">
+
+        {/* Mobile bottom navigation — hidden on lg+ */}
+        <MobileBottomNav
+          activeSection={activeSection}
+          onSectionChange={selectSection}
+          onFileUpload={uploadFromMobile}
+          onFolderCreate={newFolderFromSidebar}
+          onNoteCreate={newNote}
+          userRole={authUser?.role}
+        />
+
+        <main className="min-w-0 flex-1 pb-16 lg:pb-0">
           <DashboardHeader
             query={query}
             onQueryChange={setQuery}
