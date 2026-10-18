@@ -12,7 +12,7 @@ import { Download, Link2Off, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type PublicShareInfo } from "@/lib/api";
 import { FilePreview } from "../dialogs/-FilePreview";
-import loadingCat from "@/assets/loading_cat.gif";
+import loadingCat from "@/assets/Loader_cat.gif";
 
 export const Route = createFileRoute("/share/$token")({
   component: PublicSharePage,
@@ -65,14 +65,7 @@ function PublicSharePage() {
   useEffect(() => {
     document.documentElement.classList.remove("dark");
     return () => {
-      // Restore theme saat user navigasi kembali
-      try {
-        const savedTheme = localStorage.getItem("MewDrive-theme") ?? "system";
-        const isDark =
-          savedTheme === "dark" ||
-          (savedTheme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.classList.toggle("dark", isDark);
-      } catch { /* ignore */ }
+      // Tidak perlu restore — aplikasi selalu light mode
     };
   }, []);
 

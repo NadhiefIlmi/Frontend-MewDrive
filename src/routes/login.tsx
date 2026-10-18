@@ -12,8 +12,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import loginKucing from "@/assets/login_kucing.png";
-import catLogo from "@/assets/cat.png";
+import loginKucing from "@/assets/login_kucing.webp";
+import catLogo from "@/assets/cat.webp";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/login")({
@@ -170,6 +170,7 @@ function LoginPage() {
             <img
               src={loginKucing}
               alt="Kucing lucu di workspace"
+              fetchPriority="high"
               className="absolute inset-0 size-full object-cover object-center"
             />
             <span className="absolute bottom-4 right-4 rounded-ui border-2 border-ink bg-sun px-4 py-2 text-sm font-bold shadow-brutal-sm">

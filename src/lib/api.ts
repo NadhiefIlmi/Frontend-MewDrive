@@ -747,6 +747,149 @@ class ApiClient {
   getPublicSharePreviewUrl(token: string): string {
     return `${this.baseUrl}/share/public/${token}/preview`;
   }
+
+  // ─── Tasks ────────────────────────────────────────────────────────────────────
+
+  async getTasks(params?: { status?: string; priority?: string; page?: number; limit?: number }): Promise<ApiResponse<{ tasks: TaskItem[]; total: number }>> {
+    const qs = new URLSearchParams();
+    if (params?.status)   qs.set('status',   params.status);
+    if (params?.priority) qs.set('priority', params.priority);
+    if (params?.page)     qs.set('page',     String(params.page));
+    if (params?.limit)    qs.set('limit',    String(params.limit));
+    const q = qs.toString() ? `?${qs.toString()}` : '';
+    return this.request<{ tasks: TaskItem[]; total: number }>(`/tasks${q}`);
+  }
+
+  async getTask(id: number): Promise<ApiResponse<TaskItem>> {
+    return this.request<TaskItem>(`/tasks/${id}`);
+  }
+
+  async createTask(data: CreateTaskRequest): Promise<ApiResponse<TaskItem>> {
+    return this.request<TaskItem>('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateTask(id: number, data: UpdateTaskRequest): Promise<ApiResponse<TaskItem>> {
+    return this.request<TaskItem>(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTask(id: number): Promise<ApiResponse<{ id: number; title: string }>> {
+    return this.request(`/tasks/${id}`, { method: 'DELETE' });
+  }
+
+  async moveTaskStatus(id: number, status: TaskStatus, position?: number): Promise<ApiResponse<TaskItem>> {
+    return this.request<TaskItem>(`/tasks/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, position }),
+    });
+  }
+
+  async attachFileToTask(taskId: number, fileId: number): Promise<ApiResponse<TaskAttachment[]>> {
+    return this.request<TaskAttachment[]>(`/tasks/${taskId}/files`, {
+      method: 'POST',
+      body: JSON.stringify({ file_id: fileId }),
+    });
+  }
+
+  async detachFileFromTask(taskId: number, fileId: number): Promise<ApiResponse<{ detached: boolean }>> {
+    return this.request(`/tasks/${taskId}/files/${fileId}`, { method: 'DELETE' });
+  }
+
+  // ─── Telegram ─────────────────────────────────────────────────────────────────
+
+  async getTelegramConfig(): Promise<ApiResponse<TelegramStatus>> {
+    return this.request<TelegramStatus>('/telegram');
+  }
+
+  async saveTelegramConfig(data: { bot_token: string; chat_id: number }): Promise<ApiResponse<TelegramStatus>> {
+    return this.request<TelegramStatus>('/telegram', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTelegramConfig(): Promise<ApiResponse<{ deleted: boolean }>> {
+    return this.request<{ deleted: boolean }>('/telegram', { method: 'DELETE' });
+  }
+
+  async testTelegramConfig(): Promise<ApiResponse<{ sent: boolean }>> {
+    return this.request<{ sent: boolean }>('/telegram/test', { method: 'POST' });
+  }
+
+  async getNotificationPreferences(): Promise<ApiResponse<NotificationPreferences>> {
+    return this.request<NotificationPreferences>('/telegram/preferences');
+  }
+
+  async updateNotificationPreferences(data: Partial<NotificationPreferences>): Promise<ApiResponse<{ updated: boolean }>> {
+    return this.request<{ updated: boolean }>('/telegram/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
+
+// ─── Telegram Types ───────────────────────────────────────────────────────────
+export interface TelegramStatus {
+  configured: boolean;
+  is_verified?: boolean;
+  verified_at?: string;
+  chat_id_mask?: string;
+  token_mask?: string;
+}
+
+export interface NotificationPreferences {
+  report_enabled: boolean;
+  frequency: 'daily' | 'weekly';
+  send_hour: number;
+  send_minute: number;
+  send_day: number;
+  report_type: 'summary' | 'detailed';
+}
+
+
+// ─── Task Types ───────────────────────────────────────────────────────────────
+export type TaskStatus   = 'todo' | 'in_progress' | 'in_review' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface TaskItem {
+  id:          number;
+  user_id:     number;
+  title:       string;
+  description: string;
+  priority:    TaskPriority;
+  status:      TaskStatus;
+  due_date:    string | null;
+  position:    number;
+  created_at:  string;
+  updated_at:  string;
+  files?:      TaskAttachment[];
+}
+
+export interface TaskAttachment {
+  id:            number;
+  name:          string;
+  original_name: string;
+  mime_type:     string;
+  size:          number;
+  extension:     string;
+  attached_at:   string;
+}
+
+export interface CreateTaskRequest {
+  title:        string;
+  description?: string;
+  priority?:    TaskPriority;
+  status?:      TaskStatus;
+  due_date?:    string | null;
+}
+
+export type UpdateTaskRequest = Partial<CreateTaskRequest> & { position?: number };
+
+

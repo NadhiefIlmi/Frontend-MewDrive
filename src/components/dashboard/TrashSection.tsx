@@ -3,7 +3,7 @@
  * Menampilkan file dan folder yang di-trash, dengan bulk restore dan empty trash — Task 11
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Trash2, RotateCcw, Loader2, Folder,
   FileText, FileImage, FileArchive, FileSpreadsheet, File,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { api, type FileItem, type Folder as ApiFolderT } from "@/lib/api";
 import { getFolderIcon } from "@/components/dashboard/FolderSection";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getFileIcon(mimeType: string): React.ElementType {
@@ -235,9 +236,7 @@ interface TrashSectionProps {
 }
 
 export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
-  const [trashedFiles,   setTrashedFiles]   = useState<FileItem[]>([]);
-  const [trashedFolders, setTrashedFolders] = useState<ApiFolderT[]>([]);
-  const [loading,        setLoading]        = useState(true);
+  const queryClient = useQueryClient();
   const [selectedIds,    setSelectedIds]    = useState<Set<string>>(new Set());
   const [bulkLoading,    setBulkLoading]    = useState(false);
 
@@ -246,23 +245,30 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
   const [deletingFolder,  setDeletingFolder]  = useState<ApiFolderT | null>(null);
   const [confirmEmpty,    setConfirmEmpty]    = useState(false);
 
-  // Sampah fetch langsung dengan limit besar — tidak pakai load more
-  // supaya "Pilih semua" dan bulk restore tetap konsisten
   const TRASH_LIMIT = 50;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [filesRes, foldersRes] = await Promise.all([
-      api.getFileTrash({ page: 1, limit: TRASH_LIMIT }),
-      api.getFolderTrash({ page: 1, limit: TRASH_LIMIT }),
-    ]);
-    if (filesRes.success && filesRes.data)     setTrashedFiles(filesRes.data.files);
-    if (foldersRes.success && foldersRes.data) setTrashedFolders(foldersRes.data.folders as ApiFolderT[]);
-    setLoading(false);
-    setSelectedIds(new Set());
-  }, []);
+  // ── React Query — cache 30 detik ─────────────────────────────────────────
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ["trash"],
+    queryFn: async () => {
+      const [filesRes, foldersRes] = await Promise.all([
+        api.getFileTrash({ page: 1, limit: TRASH_LIMIT }),
+        api.getFolderTrash({ page: 1, limit: TRASH_LIMIT }),
+      ]);
+      return {
+        files:   filesRes.data?.files                       ?? [],
+        folders: (foldersRes.data?.folders ?? []) as ApiFolderT[],
+      };
+    },
+    staleTime: 30_000,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const trashedFiles   = queryData?.files   ?? [];
+  const trashedFolders = queryData?.folders ?? [];
+
+  const invalidateTrash = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["trash"] });
+  }, [queryClient]);
 
   // Build combined list sorted by trashed_at desc
   const allItems: TrashItem[] = [
@@ -296,7 +302,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
   const handleRestoreFile = async (file: FileItem) => {
     const res = await api.restoreFile(file.id);
     if (res.success) {
-      setTrashedFiles(prev => prev.filter(f => f.id !== file.id));
+      queryClient.setQueryData<typeof queryData>(["trash"], old => old ? { ...old, files: old.files.filter(f => f.id !== file.id) } : old);
       onFlash(`"${file.name}" berhasil dipulihkan`);
     } else {
       onFlash(res.error?.message ?? "Gagal memulihkan file", "error");
@@ -306,7 +312,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
   const handleRestoreFolder = async (folder: ApiFolderT) => {
     const res = await api.restoreFolder(folder.id);
     if (res.success) {
-      setTrashedFolders(prev => prev.filter(f => f.id !== folder.id));
+      queryClient.setQueryData<typeof queryData>(["trash"], old => old ? { ...old, folders: old.folders.filter(f => f.id !== folder.id) } : old);
       onFlash(`"${folder.name}" berhasil dipulihkan`);
     } else {
       onFlash(res.error?.message ?? "Gagal memulihkan folder", "error");
@@ -322,7 +328,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
     if (!deletingFile) return;
     const res = await api.deleteFilePermanent(deletingFile.id);
     if (res.success) {
-      setTrashedFiles(prev => prev.filter(f => f.id !== deletingFile.id));
+      queryClient.setQueryData<typeof queryData>(["trash"], old => old ? { ...old, files: old.files.filter(f => f.id !== deletingFile!.id) } : old);
       onFlash(`"${deletingFile.name}" dihapus permanen`);
       onStorageChanged?.();
     } else {
@@ -339,7 +345,7 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
     if (!deletingFolder) return;
     const res = await api.deleteFolderPermanent(deletingFolder.id);
     if (res.success) {
-      setTrashedFolders(prev => prev.filter(f => f.id !== deletingFolder.id));
+      queryClient.setQueryData<typeof queryData>(["trash"], old => old ? { ...old, folders: old.folders.filter(f => f.id !== deletingFolder!.id) } : old);
       onFlash(`"${deletingFolder.name}" dihapus permanen`);
       onStorageChanged?.();
     } else {
@@ -368,8 +374,9 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
     }
 
     setBulkLoading(false);
+    setSelectedIds(new Set());
     onFlash(`${restoredCount} item berhasil dipulihkan`);
-    await load();
+    invalidateTrash();
   };
 
   // ── Empty trash ───────────────────────────────────────────────────────────────
@@ -388,21 +395,14 @@ export function TrashSection({ onFlash, onStorageChanged }: TrashSectionProps) {
     if (res.success) {
       onFlash(`Sampah dikosongkan: ${res.data?.deleted ?? 0} file dihapus permanen`);
       onStorageChanged?.();
-      await load();
+      invalidateTrash();
     } else {
       onFlash(res.error?.message ?? "Gagal mengosongkan sampah", "error");
     }
   };
 
   // ─── Render ──────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <span className="font-semibold">Memuat sampah...</span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   return (
     <div className="mt-4 space-y-3 sm:space-y-4">

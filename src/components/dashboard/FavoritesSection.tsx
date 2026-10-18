@@ -4,7 +4,7 @@
  * Load More: folder limit=12, file limit=10
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Star, StarOff, Loader2, Download,
   FileText, FileImage, FileArchive, FileSpreadsheet, File, Trash2,
@@ -13,6 +13,7 @@ import { api, type FileItem, type Folder as ApiFolderT } from "@/lib/api";
 import { getFolderIcon } from "@/components/dashboard/FolderSection";
 import { FilePreviewDialog } from "@/components/dashboard/FilePreviewDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const FOLDERS_LIMIT = 12;
 const FILES_LIMIT   = 10;
@@ -216,41 +217,40 @@ interface FavoritesSectionProps {
 }
 
 export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProps) {
-  const [starredFiles,   setStarredFiles]   = useState<FileItem[]>([]);
-  const [starredFolders, setStarredFolders] = useState<ApiFolderT[]>([]);
-  const [loading,        setLoading]        = useState(true);
+  const queryClient = useQueryClient();
   const [previewFile,    setPreviewFile]    = useState<FileItem | null>(null);
   const [trashingFile,   setTrashingFile]   = useState<FileItem | null>(null);
 
-  // ── Pagination state ──────────────────────────────────────────────────────
+  // ── Extra pages (load more além de page 1) ───────────────────────────────
+  const [extraFiles,         setExtraFiles]         = useState<FileItem[]>([]);
+  const [extraFolders,       setExtraFolders]       = useState<ApiFolderT[]>([]);
   const [filesPage,          setFilesPage]          = useState(1);
-  const [filesTotal,         setFilesTotal]          = useState(0);
-  const [filesLoadingMore,   setFilesLoadingMore]    = useState(false);
-  const [foldersPage,        setFoldersPage]         = useState(1);
-  const [foldersTotal,       setFoldersTotal]        = useState(0);
-  const [foldersLoadingMore, setFoldersLoadingMore]  = useState(false);
+  const [foldersPage,        setFoldersPage]        = useState(1);
+  const [filesLoadingMore,   setFilesLoadingMore]   = useState(false);
+  const [foldersLoadingMore, setFoldersLoadingMore] = useState(false);
 
-  // ── Initial load (page 1) ─────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true);
-    setFilesPage(1);
-    setFoldersPage(1);
-    const [filesRes, foldersRes] = await Promise.all([
-      api.getFileStarred({ page: 1, limit: FILES_LIMIT }),
-      api.getFolderStarred({ page: 1, limit: FOLDERS_LIMIT }),
-    ]);
-    if (filesRes.success && filesRes.data) {
-      setStarredFiles(filesRes.data.files);
-      setFilesTotal(filesRes.data.total);
-    }
-    if (foldersRes.success && foldersRes.data) {
-      setStarredFolders(foldersRes.data.folders as ApiFolderT[]);
-      setFoldersTotal(foldersRes.data.total);
-    }
-    setLoading(false);
-  }, []);
+  // ── React Query — cache 60 detik ─────────────────────────────────────────
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ["favorites"],
+    queryFn: async () => {
+      const [filesRes, foldersRes] = await Promise.all([
+        api.getFileStarred({ page: 1, limit: FILES_LIMIT }),
+        api.getFolderStarred({ page: 1, limit: FOLDERS_LIMIT }),
+      ]);
+      return {
+        files:        filesRes.data?.files        ?? [],
+        filesTotal:   filesRes.data?.total        ?? 0,
+        folders:      (foldersRes.data?.folders   ?? []) as ApiFolderT[],
+        foldersTotal: foldersRes.data?.total      ?? 0,
+      };
+    },
+    staleTime: 60_000,
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const starredFiles   = [...(queryData?.files   ?? []), ...extraFiles];
+  const starredFolders = [...(queryData?.folders ?? []), ...extraFolders];
+  const filesTotal     = queryData?.filesTotal   ?? 0;
+  const foldersTotal   = queryData?.foldersTotal ?? 0;
 
   // ── Load more files ───────────────────────────────────────────────────────
   const loadMoreFiles = async () => {
@@ -258,9 +258,8 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
     const nextPage = filesPage + 1;
     const res = await api.getFileStarred({ page: nextPage, limit: FILES_LIMIT });
     if (res.success && res.data) {
-      setStarredFiles(prev => [...prev, ...res.data!.files]);
+      setExtraFiles(prev => [...prev, ...res.data!.files]);
       setFilesPage(nextPage);
-      setFilesTotal(res.data.total);
     }
     setFilesLoadingMore(false);
   };
@@ -271,9 +270,8 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
     const nextPage = foldersPage + 1;
     const res = await api.getFolderStarred({ page: nextPage, limit: FOLDERS_LIMIT });
     if (res.success && res.data) {
-      setStarredFolders(prev => [...prev, ...(res.data!.folders as ApiFolderT[])]);
+      setExtraFolders(prev => [...prev, ...(res.data!.folders as ApiFolderT[])]);
       setFoldersPage(nextPage);
-      setFoldersTotal(res.data.total);
     }
     setFoldersLoadingMore(false);
   };
@@ -282,8 +280,12 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
   const handleUnstarFile = async (file: FileItem) => {
     const res = await api.updateFile(file.id, { is_starred: false });
     if (res.success) {
-      setStarredFiles(prev => prev.filter(f => f.id !== file.id));
-      setFilesTotal(prev => Math.max(0, prev - 1));
+      // Optimistic: hapus dari cache
+      queryClient.setQueryData<typeof queryData>(["favorites"], old => {
+        if (!old) return old;
+        return { ...old, files: old.files.filter(f => f.id !== file.id), filesTotal: Math.max(0, old.filesTotal - 1) };
+      });
+      setExtraFiles(prev => prev.filter(f => f.id !== file.id));
       onFlash(`"${file.name}" dihapus dari favorit`);
     } else {
       onFlash(res.error?.message ?? "Gagal update file", "error");
@@ -293,8 +295,11 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
   const handleUnstarFolder = async (folder: ApiFolderT) => {
     const res = await api.updateFolder(folder.id, { is_starred: false });
     if (res.success) {
-      setStarredFolders(prev => prev.filter(f => f.id !== folder.id));
-      setFoldersTotal(prev => Math.max(0, prev - 1));
+      queryClient.setQueryData<typeof queryData>(["favorites"], old => {
+        if (!old) return old;
+        return { ...old, folders: old.folders.filter(f => f.id !== folder.id), foldersTotal: Math.max(0, old.foldersTotal - 1) };
+      });
+      setExtraFolders(prev => prev.filter(f => f.id !== folder.id));
       onFlash(`"${folder.name}" dihapus dari favorit`);
     } else {
       onFlash(res.error?.message ?? "Gagal update folder", "error");
@@ -309,8 +314,11 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
     if (!trashingFile) return;
     const res = await api.trashFile(trashingFile.id);
     if (res.success) {
-      setStarredFiles(prev => prev.filter(f => f.id !== trashingFile.id));
-      setFilesTotal(prev => Math.max(0, prev - 1));
+      queryClient.setQueryData<typeof queryData>(["favorites"], old => {
+        if (!old) return old;
+        return { ...old, files: old.files.filter(f => f.id !== trashingFile!.id), filesTotal: Math.max(0, old.filesTotal - 1) };
+      });
+      setExtraFiles(prev => prev.filter(f => f.id !== trashingFile.id));
       onFlash(`"${trashingFile.name}" dipindahkan ke sampah`);
     } else {
       onFlash(res.error?.message ?? "Gagal menghapus file", "error");
@@ -321,14 +329,7 @@ export function FavoritesSection({ onFolderOpen, onFlash }: FavoritesSectionProp
   const total = starredFiles.length + starredFolders.length;
 
   // ── Loading state ─────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <span className="font-semibold">Memuat favorit...</span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   // ── Empty state ───────────────────────────────────────────────────────────
   if (total === 0 && filesTotal === 0 && foldersTotal === 0) {

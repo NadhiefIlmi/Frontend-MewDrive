@@ -3,7 +3,7 @@
  * Menampilkan file yang baru diakses/diupload, data real dari API — Task 11
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   Clock, Loader2, Star, Download, Trash2,
   FileText, FileImage, FileArchive, FileSpreadsheet, File,
@@ -11,6 +11,7 @@ import {
 import { api, type FileItem } from "@/lib/api";
 import { FilePreviewDialog } from "@/components/dashboard/FilePreviewDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getFileIcon(mimeType: string): React.ElementType {
@@ -135,24 +136,26 @@ interface RecentSectionProps {
 }
 
 export function RecentSection({ onFlash }: RecentSectionProps) {
-  const [files,        setFiles]        = useState<FileItem[]>([]);
-  const [loading,      setLoading]      = useState(true);
+  const queryClient = useQueryClient();
   const [previewFile,  setPreviewFile]  = useState<FileItem | null>(null);
   const [trashingFile, setTrashingFile] = useState<FileItem | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await api.getFileRecent(20);
-    if (res.success && res.data) setFiles(res.data.files);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
+  const { data: files = [], isLoading: loading } = useQuery({
+    queryKey: ["recent-files"],
+    queryFn: async () => {
+      const res = await api.getFileRecent(20);
+      if (res.success && res.data) return res.data.files;
+      throw new Error(res.error?.message ?? "Gagal memuat file terbaru");
+    },
+    staleTime: 60_000,
+  });
 
   const handleToggleStar = async (file: FileItem) => {
     const res = await api.updateFile(file.id, { is_starred: !file.is_starred });
     if (res.success && res.data) {
-      setFiles(prev => prev.map(f => f.id === file.id ? { ...f, is_starred: !f.is_starred } : f));
+      queryClient.setQueryData<FileItem[]>(["recent-files"], prev =>
+        prev?.map(f => f.id === file.id ? { ...f, is_starred: !f.is_starred } : f) ?? []
+      );
       onFlash(file.is_starred ? "Tanda bintang dihapus" : `"${file.name}" ditandai ★`);
     } else {
       onFlash(res.error?.message ?? "Gagal update file", "error");
@@ -167,7 +170,9 @@ export function RecentSection({ onFlash }: RecentSectionProps) {
     if (!trashingFile) return;
     const res = await api.trashFile(trashingFile.id);
     if (res.success) {
-      setFiles(prev => prev.filter(f => f.id !== trashingFile.id));
+      queryClient.setQueryData<FileItem[]>(["recent-files"], prev =>
+        prev?.filter(f => f.id !== trashingFile!.id) ?? []
+      );
       onFlash(`"${trashingFile.name}" dipindahkan ke sampah`);
     } else {
       onFlash(res.error?.message ?? "Gagal menghapus file", "error");
@@ -175,14 +180,7 @@ export function RecentSection({ onFlash }: RecentSectionProps) {
     setTrashingFile(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <span className="font-semibold">Memuat file terbaru...</span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   if (files.length === 0) {
     return (

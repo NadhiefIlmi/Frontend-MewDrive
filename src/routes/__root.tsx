@@ -106,12 +106,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#000000" },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" },
+      // Self-hosted fonts — preload 4 DM Sans + 1 Space Grotesk latin weights
+      // Browser akan langsung mulai download sebelum CSS selesai di-parse
+      { rel: "preload", as: "font", href: "/fonts/dm-sans-3.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", href: "/fonts/dm-sans-5.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", href: "/fonts/dm-sans-7.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", href: "/fonts/dm-sans-9.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", href: "/fonts/space-grotesk-2.woff2", type: "font/woff2", crossOrigin: "anonymous" },
+      // LCP hero image — preload agar browser tidak tunggu JS hydration
+      { rel: "preload", as: "image", href: "/kucing_pagi.webp", fetchPriority: "high" } as any,
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/cat.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/cat.png" },
+      { rel: "icon", href: "/cat.webp", type: "image/webp" },
+      { rel: "apple-touch-icon", href: "/cat.webp" },
       { rel: "manifest", href: "/manifest.json" },
     ],
   }),
@@ -126,7 +132,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('MewDrive-theme')||'light';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';localStorage.setItem('MewDrive-theme','light')}catch(e){}})()` }} />
       </head>
       <body>
         {children}

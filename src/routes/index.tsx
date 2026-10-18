@@ -4,7 +4,7 @@
  */
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
@@ -15,28 +15,31 @@ import { useAuth } from "@/contexts/AuthContext";
 import { sectionCopy } from "@/lib/dashboard-constants";
 import type { Section, User } from "@/types/dashboard";
 import { useToast, ToastContainer } from "@/components/ui/Toast";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-// Dialogs
-import { AddUserDialog } from "@/components/users/AddUserDialog";
-import { EditUserDialog } from "@/components/users/EditUserDialog";
-import { StorageQuotaDialog } from "@/components/users/StorageQuotaDialog";
-import { ViewUserDetailsDialog } from "@/components/users/ViewUserDetailsDialog";
-import { ManagePermissionsDialog } from "@/components/users/ManagePermissionsDialog";
-import { ResetPasswordDialog } from "@/components/users/ResetPasswordDialog";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+// ─── Lazy-loaded Sections (only load when user navigates to them) ─────────────
+const HomeSection          = lazy(() => import("@/components/dashboard/HomeSection").then(m => ({ default: m.HomeSection })));
+const FolderSection        = lazy(() => import("@/components/dashboard/FolderSection").then(m => ({ default: m.FolderSection })));
+const FilesSection         = lazy(() => import("@/components/dashboard/FilesSection").then(m => ({ default: m.FilesSection })));
+const FavoritesSection     = lazy(() => import("@/components/dashboard/FavoritesSection").then(m => ({ default: m.FavoritesSection })));
+const RecentSection        = lazy(() => import("@/components/dashboard/RecentSection").then(m => ({ default: m.RecentSection })));
+const TrashSection         = lazy(() => import("@/components/dashboard/TrashSection").then(m => ({ default: m.TrashSection })));
+const NotesSection         = lazy(() => import("@/components/dashboard/NotesSection").then(m => ({ default: m.NotesSection })));
+const UsersSection         = lazy(() => import("@/components/dashboard/UsersSection").then(m => ({ default: m.UsersSection })));
+const SettingsSection      = lazy(() => import("@/components/dashboard/SettingsSection").then(m => ({ default: m.SettingsSection })));
+const StorageSection       = lazy(() => import("@/components/dashboard/StorageSection").then(m => ({ default: m.StorageSection })));
+const TasksSection         = lazy(() => import("@/components/dashboard/TasksSection").then(m => ({ default: m.TasksSection })));
+const FilePreviewDialog    = lazy(() => import("@/components/dashboard/FilePreviewDialog").then(m => ({ default: m.FilePreviewDialog })));
 
-// Sections
-import { HomeSection } from "@/components/dashboard/HomeSection";
-import { FolderSection } from "@/components/dashboard/FolderSection";
-import { FilesSection } from "@/components/dashboard/FilesSection";
-import { FavoritesSection } from "@/components/dashboard/FavoritesSection";
-import { RecentSection } from "@/components/dashboard/RecentSection";
-import { TrashSection } from "@/components/dashboard/TrashSection";
-import { NotesSection } from "@/components/dashboard/NotesSection";
-import { UsersSection } from "@/components/dashboard/UsersSection";
-import { SettingsSection } from "@/components/dashboard/SettingsSection";
-import { StorageSection } from "@/components/dashboard/StorageSection";
-import { FilePreviewDialog } from "@/components/dashboard/FilePreviewDialog";
+// ─── Lazy-loaded Dialogs (only load when opened) ──────────────────────────────
+const AddUserDialog        = lazy(() => import("@/components/users/AddUserDialog").then(m => ({ default: m.AddUserDialog })));
+const EditUserDialog       = lazy(() => import("@/components/users/EditUserDialog").then(m => ({ default: m.EditUserDialog })));
+const StorageQuotaDialog   = lazy(() => import("@/components/users/StorageQuotaDialog").then(m => ({ default: m.StorageQuotaDialog })));
+const ViewUserDetailsDialog = lazy(() => import("@/components/users/ViewUserDetailsDialog").then(m => ({ default: m.ViewUserDetailsDialog })));
+const ManagePermissionsDialog = lazy(() => import("@/components/users/ManagePermissionsDialog").then(m => ({ default: m.ManagePermissionsDialog })));
+const ResetPasswordDialog  = lazy(() => import("@/components/users/ResetPasswordDialog").then(m => ({ default: m.ResetPasswordDialog })));
+const ConfirmDialog        = lazy(() => import("@/components/ui/ConfirmDialog").then(m => ({ default: m.ConfirmDialog })));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -130,6 +133,7 @@ function Index() {
 
   // ─── Dialogs ──────────────────────────────────────────────────────────────
   const [searchPreviewFile, setSearchPreviewFile] = useState<FileItem | null>(null);
+  const [tasksNewFormOpen, setTasksNewFormOpen]   = useState(false);
 
   // ─── Fetch files dari API ─────────────────────────────────────────────────
   // Reset ke halaman 1 (fetch baru saat folder berubah)
@@ -389,6 +393,7 @@ function Index() {
         />
 
         <main className="min-w-0 flex-1 pb-22 lg:pb-0">
+          <Suspense fallback={null}>
           <DashboardHeader
             query={query}
             onQueryChange={setQuery}
@@ -424,7 +429,7 @@ function Index() {
           <div className="mx-auto max-w-[1500px] p-4 md:p-8">
 
             {/* Home */}
-            {activeSection === "home" && (
+            <div className={activeSection !== "home" ? "hidden" : ""}>
               <HomeSection
                 folders={apiFolders}
                 foldersLoading={foldersLoading}
@@ -438,94 +443,84 @@ function Index() {
                 onFolderStarToggled={handleFolderStarToggled}
                 onFlash={flash}
               />
-            )}
+            </div>
 
             {/* Files */}
-            {activeSection === "files" && (
-              <>
-                <SectionHeader section="files" count={headerCount} />
-                <FolderSection
-                  folders={visibleFolders}
-                  loading={foldersLoading}
-                  currentParentId={currentParentId}
-                  breadcrumb={folderStack}
-                  onBreadcrumbNavigate={handleBreadcrumbNavigate}
-                  onFolderOpen={handleFolderOpen}
-                  onFolderCreated={handleFolderCreated}
-                  onFolderRenamed={handleFolderRenamed}
-                  onFolderTrashed={handleFolderTrashed}
-                  onFolderStarToggled={handleFolderStarToggled}
+            <div className={activeSection !== "files" ? "hidden" : ""}>
+              <SectionHeader section="files" count={headerCount} />
+              <FolderSection
+                folders={visibleFolders}
+                loading={foldersLoading}
+                currentParentId={currentParentId}
+                breadcrumb={folderStack}
+                onBreadcrumbNavigate={handleBreadcrumbNavigate}
+                onFolderOpen={handleFolderOpen}
+                onFolderCreated={handleFolderCreated}
+                onFolderRenamed={handleFolderRenamed}
+                onFolderTrashed={handleFolderTrashed}
+                onFolderStarToggled={handleFolderStarToggled}
+                onFlash={flash}
+                forceShowCreate={showCreateFolder}
+                onCreateDialogClosed={() => setShowCreateFolder(false)}
+                onUploadClick={() => fileInput.current?.click()}
+                foldersTotal={foldersTotal}
+                loadingMore={foldersLoadingMore}
+                onLoadMore={() => loadMoreFolders(currentParentId, foldersPage + 1)}
+              />
+              <div className="mt-6">
+                <h2 className="mb-3 font-display text-xl font-bold">
+                  File
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    ({filesTotal})
+                  </span>
+                </h2>
+                <FilesSection
+                  files={visibleFiles}
+                  loading={filesLoading}
+                  filesTotal={filesTotal}
+                  loadingMore={filesLoadingMore}
+                  onLoadMore={() => loadMoreFiles(currentParentId, filesPage + 1)}
+                  onFilesChanged={() => fetchFiles(currentParentId)}
                   onFlash={flash}
-                  forceShowCreate={showCreateFolder}
-                  onCreateDialogClosed={() => setShowCreateFolder(false)}
                   onUploadClick={() => fileInput.current?.click()}
-                  foldersTotal={foldersTotal}
-                  loadingMore={foldersLoadingMore}
-                  onLoadMore={() => loadMoreFolders(currentParentId, foldersPage + 1)}
+                  onFileDrop={(fileList) => onUpload(fileList)}
                 />
-                <div className="mt-6">
-                  <h2 className="mb-3 font-display text-xl font-bold">
-                    File
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      ({filesTotal})
-                    </span>
-                  </h2>
-                  <FilesSection
-                    files={visibleFiles}
-                    loading={filesLoading}
-                    filesTotal={filesTotal}
-                    loadingMore={filesLoadingMore}
-                    onLoadMore={() => loadMoreFiles(currentParentId, filesPage + 1)}
-                    onFilesChanged={() => fetchFiles(currentParentId)}
-                    onFlash={flash}
-                    onUploadClick={() => fileInput.current?.click()}
-                    onFileDrop={(fileList) => onUpload(fileList)}
-                  />
-                </div>
-              </>
-            )}
+              </div>
+            </div>
 
             {/* Favorites */}
-            {activeSection === "favorites" && (
-              <>
-                <SectionHeader section="favorites" />
-                <FavoritesSection
-                  onFolderOpen={(folder) => {
-                    handleFolderOpen(folder as any);
-                  }}
-                  onFlash={flash}
-                />
-              </>
-            )}
+            <div className={activeSection !== "favorites" ? "hidden" : ""}>
+              <SectionHeader section="favorites" />
+              <FavoritesSection
+                onFolderOpen={(folder) => {
+                  handleFolderOpen(folder as any);
+                }}
+                onFlash={flash}
+              />
+            </div>
 
             {/* Recent */}
-            {activeSection === "recent" && (
-              <>
-                <SectionHeader section="recent" />
-                <RecentSection onFlash={flash} />
-              </>
-            )}
+            <div className={activeSection !== "recent" ? "hidden" : ""}>
+              <SectionHeader section="recent" />
+              <RecentSection onFlash={flash} />
+            </div>
 
             {/* Trash */}
-            {activeSection === "trash" && (
-              <>
-                <SectionHeader section="trash" />
-                <TrashSection
-                  onFlash={flash}
-                  onStorageChanged={refreshUser}
-                />
-              </>
-            )}
+            <div className={activeSection !== "trash" ? "hidden" : ""}>
+              <SectionHeader section="trash" />
+              <TrashSection
+                onFlash={flash}
+                onStorageChanged={refreshUser}
+              />
+            </div>
 
             {/* Notes */}
-            {activeSection === "notes" && (
-              <>
-                <SectionHeader section="notes" />
-                <NotesSection onFlash={flash} />
-              </>
-            )}
+            <div className={activeSection !== "notes" ? "hidden" : ""}>
+              <SectionHeader section="notes" />
+              <NotesSection onFlash={flash} />
+            </div>
 
-            {/* Users */}
+            {/* Users — tetap pakai && karena data dikelola parent */}
             {activeSection === "users" && (
               <>
                 <SectionHeader section="users" count={visibleUsers.length} />
@@ -548,10 +543,31 @@ function Index() {
 
             {activeSection === "settings" && <SettingsSection />}
             {activeSection === "storage"  && <StorageSection />}
+
+            {/* Tasks */}
+            <div className={activeSection !== "tasks" ? "hidden" : ""}>
+              <SectionHeader
+                section="tasks"
+                action={
+                  <Button
+                    onClick={() => setTasksNewFormOpen(true)}
+                  >
+                    <Plus className="size-5" /> Tambah Task
+                  </Button>
+                }
+              />
+              <TasksSection
+                onFlash={flash}
+                externalNewFormOpen={tasksNewFormOpen}
+                onExternalNewFormHandled={() => setTasksNewFormOpen(false)}
+              />
+            </div>
           </div>
+          </Suspense>
         </main>
 
         {/* ─── Dialogs ───────────────────────────────────────────────────── */}
+        <Suspense fallback={null}>
         {showAddUserDialog && (
           <AddUserDialog
             onClose={() => setShowAddUserDialog(false)}
@@ -650,13 +666,14 @@ function Index() {
             onClose={() => setSearchPreviewFile(null)}
           />
         )}
+        </Suspense>
       </div>
     </ProtectedRoute>
   );
 }
 
 // ─── Section header helper ────────────────────────────────────────────────────
-function SectionHeader({ section, count }: { section: Section; count?: number }) {
+function SectionHeader({ section, count, action }: { section: Section; count?: number; action?: React.ReactNode }) {
   const copy = sectionCopy[section as Exclude<Section, "home">];
   if (!copy) return null;
   return (
@@ -667,11 +684,11 @@ function SectionHeader({ section, count }: { section: Section; count?: number })
           <h1 className="font-display text-4xl font-bold md:text-5xl">{copy.title}</h1>
           <p className="mt-2 font-medium text-muted-foreground">{copy.description}</p>
         </div>
-        {count !== undefined && (
+        {action ?? (count !== undefined && (
           <span className="rounded-ui border-2 border-ink bg-sun px-4 py-2 font-bold shadow-brutal-sm">
             {count} item
           </span>
-        )}
+        ))}
       </div>
     </section>
   );

@@ -16,18 +16,19 @@ import {
   FileSpreadsheet,
   FileImage,
   Sun,
-  Moon,
+  CheckSquare,
 } from "lucide-react";
 import type { Section, DocumentItem, Note, User, FolderItem } from "@/types/dashboard";
 import type { Theme } from "@/hooks/useTheme";
 
 export const navigation: { Icon: typeof Grid2X2; label: string; id: Section; adminOnly?: boolean }[] = [
-  { Icon: Grid2X2, label: "Beranda", id: "home" },
-  { Icon: Folder, label: "Dokumen saya", id: "files" },
-  { Icon: Star, label: "Favorit", id: "favorites" },
-  { Icon: StickyNote, label: "Catatan", id: "notes" },
-  { Icon: Trash2, label: "Sampah", id: "trash" },
-  { Icon: Users, label: "User Management", id: "users", adminOnly: true },
+  { Icon: Grid2X2,      label: "Beranda",        id: "home" },
+  { Icon: Folder,       label: "Dokumen saya",   id: "files" },
+  { Icon: Star,         label: "Favorit",        id: "favorites" },
+  { Icon: StickyNote,   label: "Catatan",        id: "notes" },
+  { Icon: CheckSquare,  label: "Tasks",          id: "tasks" },
+  { Icon: Trash2,       label: "Sampah",         id: "trash" },
+  { Icon: Users,        label: "User Management", id: "users", adminOnly: true },
 ];
 
 export const sectionCopy: Record<
@@ -74,6 +75,11 @@ export const sectionCopy: Record<
     title: "Terbaru",
     description: "File dan folder yang baru saja kamu akses.",
   },
+  tasks: {
+    eyebrow: "Produktivitas",
+    title: "Tasks",
+    description: "Kelola daftar tugas dan pantau progres harianmu.",
+  },
 };
 
 export const themeOptions: {
@@ -87,12 +93,6 @@ export const themeOptions: {
     label: "Light",
     description: "Tampilan terang setiap saat",
     Icon: Sun,
-  },
-  {
-    id: "dark",
-    label: "Dark",
-    description: "Tampilan gelap setiap saat",
-    Icon: Moon,
   },
 ];
 

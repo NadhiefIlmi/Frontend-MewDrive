@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MenuItem } from "./MenuItem";
-import catLogo from "@/assets/cat.png";
+import catLogo from "@/assets/cat.webp";
 import { navigation } from "@/lib/dashboard-constants";
 import type { Section } from "@/types/dashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,6 +54,19 @@ export function DashboardSidebar({
 
   const isAdmin = userRole === "ADMIN";
   const visibleNav = navigation.filter((item) => !item.adminOnly || isAdmin);
+
+  // Warna aktif per section — konsisten dengan MobileBottomNav
+  const activeBgMap: Record<string, string> = {
+    home:      "bg-lime",
+    files:     "bg-sky",
+    favorites: "bg-sun",
+    notes:     "bg-lilac",
+    tasks:     "bg-mint",
+    trash:     "bg-coral",
+    users:     "bg-sky",
+    storage:   "bg-sun",
+    settings:  "bg-lilac",
+  };
 
   // Hitung dari bytes
   const pct = storageQuota > 0 ? Math.min(100, Math.round((storageUsed / storageQuota) * 100)) : 0;
@@ -153,6 +166,7 @@ export function DashboardSidebar({
         <nav className={`${canCreate ? "mt-8" : "mt-0"} space-y-2`} aria-label="Navigasi utama">
           {visibleNav.map(({ Icon, label, id }) => {
             const active = activeSection === id;
+            const activeBg = activeBgMap[id] ?? "bg-lilac";
             return (
               <Button
                 key={id}
@@ -162,13 +176,13 @@ export function DashboardSidebar({
                   onSectionChange(id);
                   onClose();
                 }}
-                className={`h-auto w-full justify-start px-3 py-2.5 ${
+                className={`h-auto w-full justify-start px-3 py-2.5 transition-all duration-150 ${
                   active
-                    ? "border-ink bg-lilac shadow-brutal-sm hover:bg-lilac"
+                    ? `border-ink ${activeBg} shadow-brutal-sm hover:${activeBg} font-bold`
                     : "hover:border-ink"
                 }`}
               >
-                <Icon className="size-5" /> {label}
+                <Icon className={`size-5 ${active ? "stroke-[2.3px]" : ""}`} /> {label}
               </Button>
             );
           })}

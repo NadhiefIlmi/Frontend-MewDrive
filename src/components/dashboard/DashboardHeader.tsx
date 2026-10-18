@@ -6,21 +6,15 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Sun,
-  Moon,
-  Monitor,
   Settings,
   HardDrive,
   LogOut,
-  Check,
   Shield,
   KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MenuItem } from "./MenuItem";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme, type Theme } from "@/hooks/useTheme";
-import { themeOptions } from "@/lib/dashboard-constants";
 import type { Section } from "@/types/dashboard";
 import { SearchBar } from "@/components/dashboard/SearchBar";
 import type { FileItem } from "@/lib/api";
@@ -50,11 +44,10 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { theme, changeTheme } = useTheme();
-  const [openMenu, setOpenMenu] = useState<"theme" | "profile" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"profile" | null>(null);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const toggleMenu = (menu: "theme" | "profile") => {
+  const toggleMenu = (menu: "profile") => {
     setOpenMenu((current) => (current === menu ? null : menu));
   };
 
@@ -92,51 +85,6 @@ export function DashboardHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {/* Theme Switcher */}
-          <div className="relative z-30">
-            <Button
-              variant="icon"
-              aria-label="Pilih tema"
-              title="Pilih tema"
-              onClick={() => toggleMenu("theme")}
-            >
-              {theme === "light" ? (
-                <Sun className="size-5" />
-              ) : theme === "dark" ? (
-                <Moon className="size-5" />
-              ) : (
-                <Monitor className="size-5" />
-              )}
-            </Button>
-            {openMenu === "theme" && (
-              <div className="absolute right-0 top-full mt-3 w-72 max-w-[85vw] rounded-ui border-2 border-ink bg-card p-2 shadow-brutal">
-                <p className="border-b-2 border-ink px-3 pb-2 font-display font-bold">
-                  Dark Mode
-                </p>
-                {themeOptions.map(({ id, label, description, Icon }) => (
-                  <Button
-                    key={id}
-                    variant="ghost"
-                    onClick={() => {
-                      changeTheme(id);
-                      setOpenMenu(null);
-                    }}
-                    className="mt-1 h-auto w-full justify-start px-3 py-2 text-left"
-                  >
-                    <Icon className="size-5 shrink-0" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold">{label}</span>
-                      <span className="block text-xs font-medium text-muted-foreground">
-                        {description}
-                      </span>
-                    </span>
-                    {theme === id && <Check className="size-5 shrink-0" />}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Profile Menu */}
           <div className="relative z-30">
             <Button

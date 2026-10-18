@@ -4,12 +4,13 @@
  * Load More: limit 20 per halaman
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Check, X, Loader2, Trash2, StickyNote } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Plus, Check, X, Loader2, Trash2, StickyNote, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api, type NoteItem } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const NOTES_LIMIT = 20;
 
@@ -136,16 +137,35 @@ function NoteCard({
   note,
   onEdit,
   onDelete,
+  onPin,
 }: {
   note: NoteItem;
   onEdit: (note: NoteItem) => void;
   onDelete: (note: NoteItem) => void;
+  onPin: (note: NoteItem) => void;
 }) {
   return (
     <div className="group relative rounded-ui border-2 border-ink bg-card shadow-brutal-sm transition-transform hover:-translate-y-1 overflow-hidden">
 
-      {/* ── Area atas — berwarna, berisi judul + tombol hapus ── */}
+      {/* ── Area atas — berwarna, berisi judul + tombol aksi ── */}
       <div className={`relative px-4 py-3 ${note.color}`}>
+        {/* Tombol pin */}
+        <button
+          type="button"
+          title={note.is_pinned ? "Unpin catatan" : "Pin catatan"}
+          onClick={e => { e.stopPropagation(); onPin(note); }}
+          className={`absolute left-2 top-2 grid size-7 place-items-center rounded border-2 transition-all
+            ${note.is_pinned
+              ? "border-ink bg-ink text-card opacity-100"
+              : "border-transparent bg-transparent hover:border-ink hover:bg-card/50 opacity-100"
+            }`}
+        >
+          {note.is_pinned
+            ? <PinOff className="size-3.5" />
+            : <Pin className="size-3.5" />
+          }
+        </button>
+
         {/* Tombol hapus */}
         <button
           type="button"
@@ -159,11 +179,14 @@ function NoteCard({
         <button
           type="button"
           onClick={() => onEdit(note)}
-          className="block w-full pr-8 text-left"
+          className="block w-full px-8 text-left"
         >
-          <p className="font-display text-base font-bold sm:text-lg">
-            {note.title.trim() || "Tanpa judul"}
-          </p>
+          <div className="flex items-center gap-1.5">
+            {note.is_pinned && <Pin className="size-3 shrink-0 text-ink/60" />}
+            <p className="font-display text-base font-bold sm:text-lg">
+              {note.title.trim() || "Tanpa judul"}
+            </p>
+          </div>
           <p className="mt-0.5 text-xs font-semibold text-foreground/60">
             {formatRelative(note.updated_at)}
           </p>
@@ -196,10 +219,9 @@ interface NotesSectionProps {
 }
 
 export function NotesSection({ onFlash }: NotesSectionProps) {
-  const [notes,       setNotes]       = useState<NoteItem[]>([]);
-  const [total,       setTotal]       = useState(0);
+  const queryClient = useQueryClient();
   const [page,        setPage]        = useState(1);
-  const [loading,     setLoading]     = useState(true);
+  const [extraNotes,  setExtraNotes]  = useState<NoteItem[]>([]); // load more pages
   const [loadingMore, setLoadingMore] = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [deletingNote, setDeletingNote] = useState<NoteItem | null>(null);
@@ -207,19 +229,21 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
   // editingNote: null = tidak edit, {} = baru, NoteItem = edit existing
   const [editingNote, setEditingNote] = useState<Partial<NoteItem> | null>(null);
 
-  // ── Initial fetch ──────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true);
-    setPage(1);
-    const res = await api.getNotes({ page: 1, limit: NOTES_LIMIT });
-    if (res.success && res.data) {
-      setNotes(res.data.notes);
-      setTotal(res.data.total);
-    }
-    setLoading(false);
-  }, []);
+  // ── React Query — cached, tidak re-fetch saat remount dalam 60 detik ───────
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ["notes", 1],
+    queryFn: async () => {
+      const res = await api.getNotes({ page: 1, limit: NOTES_LIMIT });
+      if (res.success && res.data) return res.data;
+      throw new Error(res.error?.message ?? "Gagal memuat catatan");
+    },
+    staleTime: 60_000, // data dianggap fresh selama 60 detik
+  });
 
-  useEffect(() => { load(); }, [load]);
+  const baseNotes: NoteItem[] = queryData?.notes ?? [];
+  const total: number = queryData?.total ?? 0;
+  // Gabung page 1 dari cache + page > 1 dari state
+  const notes = [...baseNotes, ...extraNotes];
 
   // ── Load more ──────────────────────────────────────────────────────────────
   const loadMore = async () => {
@@ -227,12 +251,18 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
     const nextPage = page + 1;
     const res = await api.getNotes({ page: nextPage, limit: NOTES_LIMIT });
     if (res.success && res.data) {
-      setNotes(prev => [...prev, ...res.data!.notes]);
+      setExtraNotes(prev => [...prev, ...res.data!.notes]);
       setPage(nextPage);
-      setTotal(res.data.total);
     }
     setLoadingMore(false);
   };
+
+  // Helper: invalidate cache → UI otomatis re-fetch dari server
+  const invalidateNotes = useCallback(() => {
+    setExtraNotes([]);
+    setPage(1);
+    queryClient.invalidateQueries({ queryKey: ["notes"] });
+  }, [queryClient]);
 
   // ── Save (create / update) ─────────────────────────────────────────────────
   const handleSave = async (data: { title: string; body: string; color: string }) => {
@@ -241,7 +271,11 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
       // Update existing
       const res = await api.updateNote(editingNote.id, data);
       if (res.success && res.data) {
-        setNotes(prev => prev.map(n => n.id === res.data!.id ? res.data! : n));
+        // Update cache langsung tanpa re-fetch
+        queryClient.setQueryData<typeof queryData>(["notes", 1], old => {
+          if (!old) return old;
+          return { ...old, notes: old.notes.map(n => n.id === res.data!.id ? res.data! : n) };
+        });
         onFlash("Catatan disimpan");
       } else {
         onFlash(res.error?.message ?? "Gagal menyimpan", "error");
@@ -250,8 +284,10 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
       // Create new
       const res = await api.createNote(data);
       if (res.success && res.data) {
-        setNotes(prev => [res.data!, ...prev]);
-        setTotal(prev => prev + 1);
+        queryClient.setQueryData<typeof queryData>(["notes", 1], old => {
+          if (!old) return old;
+          return { ...old, notes: [res.data!, ...old.notes], total: old.total + 1 };
+        });
         onFlash("Catatan dibuat");
       } else {
         onFlash(res.error?.message ?? "Gagal membuat catatan", "error");
@@ -260,6 +296,34 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
     setSaving(false);
     setEditingNote(null);
   };
+
+  // ── Pin / Unpin ────────────────────────────────────────────────────────────
+  const handlePin = useCallback(async (note: NoteItem) => {
+    const newPinned = !note.is_pinned;
+    // Optimistic update langsung di cache
+    queryClient.setQueryData<typeof queryData>(["notes", 1], old => {
+      if (!old) return old;
+      const updated = old.notes.map(n => n.id === note.id ? { ...n, is_pinned: newPinned } : n);
+      return {
+        ...old,
+        notes: [...updated].sort((a, b) => {
+          if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        }),
+      };
+    });
+    const res = await api.updateNote(note.id, { is_pinned: newPinned });
+    if (!res.success) {
+      // Rollback
+      queryClient.setQueryData<typeof queryData>(["notes", 1], old => {
+        if (!old) return old;
+        return { ...old, notes: old.notes.map(n => n.id === note.id ? { ...n, is_pinned: note.is_pinned } : n) };
+      });
+      onFlash("Gagal mengubah pin", "error");
+    } else {
+      onFlash(newPinned ? "Catatan di-pin" : "Pin dilepas");
+    }
+  }, [queryClient, onFlash]);
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = (note: NoteItem) => {
@@ -270,8 +334,15 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
     if (!deletingNote) return;
     const res = await api.deleteNote(deletingNote.id);
     if (res.success) {
-      setNotes(prev => prev.filter(n => n.id !== deletingNote.id));
-      setTotal(prev => Math.max(0, prev - 1));
+      queryClient.setQueryData<typeof queryData>(["notes", 1], old => {
+        if (!old) return old;
+        return {
+          ...old,
+          notes: old.notes.filter(n => n.id !== deletingNote!.id),
+          total: Math.max(0, old.total - 1),
+        };
+      });
+      setExtraNotes(prev => prev.filter(n => n.id !== deletingNote.id));
       onFlash("Catatan dihapus");
     } else {
       onFlash(res.error?.message ?? "Gagal menghapus", "error");
@@ -280,14 +351,7 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
   };
 
   // ── Render: loading ────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="mt-10 flex items-center justify-center gap-2 py-16 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <span className="font-semibold">Memuat catatan...</span>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   // ── Render: editor aktif ───────────────────────────────────────────────────
   if (editingNote !== null) {
@@ -337,13 +401,41 @@ export function NotesSection({ onFlash }: NotesSectionProps) {
         </button>
       ) : (
         <>
+          {/* Pinned notes */}
+          {notes.some(n => n.is_pinned) && (
+            <>
+              <div className="mb-3 flex items-center gap-2">
+                <Pin className="size-3.5 text-muted-foreground" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Disematkan</span>
+              </div>
+              <div className="mb-6 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                {notes.filter(n => n.is_pinned).map(note => (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    onEdit={n => setEditingNote(n)}
+                    onDelete={handleDelete}
+                    onPin={handlePin}
+                  />
+                ))}
+              </div>
+              {notes.some(n => !n.is_pinned) && (
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Lainnya</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Other notes */}
           <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {notes.map(note => (
+            {notes.filter(n => !n.is_pinned).map(note => (
               <NoteCard
                 key={note.id}
                 note={note}
                 onEdit={n => setEditingNote(n)}
                 onDelete={handleDelete}
+                onPin={handlePin}
               />
             ))}
           </div>

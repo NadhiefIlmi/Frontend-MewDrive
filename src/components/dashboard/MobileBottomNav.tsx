@@ -26,6 +26,7 @@ import {
   FolderPlus,
   Trash2,
   Users,
+  CheckSquare,
 } from "lucide-react";
 import type { Section } from "@/types/dashboard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -153,6 +154,18 @@ export function MobileBottomNav({
                 User Management
               </button>
             )}
+
+            <button
+              onClick={() => handleNav("tasks")}
+              className={`flex w-full items-center gap-2.5 rounded-ui px-2 py-2 text-sm font-semibold hover:bg-lime/40 ${
+                activeSection === "tasks" ? "bg-lime/30" : ""
+              }`}
+            >
+              <span className="grid size-7 flex-shrink-0 place-items-center rounded-ui border-2 border-ink bg-lime shadow-brutal-sm">
+                <CheckSquare className="size-3.5" />
+              </span>
+              Tasks
+            </button>
           </div>
         </div>
       )}

@@ -13,6 +13,7 @@ export type Section =
   | "favorites"
   | "notes"
   | "trash"
+  | "tasks"
   | "users"
   | "storage"
   | "settings";

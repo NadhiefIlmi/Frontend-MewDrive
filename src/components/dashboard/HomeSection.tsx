@@ -6,10 +6,9 @@
 import { useState, useEffect } from "react";
 import { FileText, StickyNote, FolderPlus, Folder, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import kucingPagi from "@/assets/kucing_pagi.png";
-import kucingMalam from "@/assets/kucing_malam.png";
+// kucing_pagi diambil dari /public/ supaya path-nya statis dan bisa di-preload di <head>
+const kucingPagi = "/kucing_pagi.webp";
 import catLoader from "@/assets/Loader_cat.gif";
-import { useTheme } from "@/hooks/useTheme";
 import { type ApiFolderItem } from "@/types/dashboard";
 import type { Section } from "@/types/dashboard";
 import { FolderCard, EditFolderDialog } from "@/components/dashboard/FolderSection";
@@ -44,7 +43,6 @@ export function HomeSection({
   onFolderStarToggled,
   onFlash,
 }: HomeSectionProps) {
-  const { theme } = useTheme();
   const { can } = useAuth();
   const [menuOpenId, setMenuOpenId]           = useState<number | null>(null);
   const [editingFolder, setEditingFolder]     = useState<ApiFolderItem | null>(null);
@@ -120,8 +118,10 @@ export function HomeSection({
           </div>
           <div className="relative min-h-48 border-t-2 border-ink sm:min-h-full sm:border-l-2 sm:border-t-0">
             <img
-              src={theme === "dark" ? kucingMalam : kucingPagi}
-              alt={theme === "dark" ? "Kucing di malam hari" : "Kucing di pagi hari"}
+              src={kucingPagi}
+              alt="Kucing di pagi hari"
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 size-full object-cover object-[center_68%] sm:object-[54%_46%]"
             />
             <span className="absolute bottom-3 right-3 rounded-ui border-2 border-ink bg-sun px-3 py-1 text-xs font-bold shadow-brutal-sm">
