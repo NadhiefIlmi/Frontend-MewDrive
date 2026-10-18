@@ -25,7 +25,7 @@ jobs:
             set -e
 
             echo ">>> Masuk ke direktori frontend"
-            cd /var/MewDrive/Frontend-MewDrive
+            cd /var/mydrive/Frontend-MewDrive
 
             echo ">>> Pull latest code dari main"
             git pull origin main
