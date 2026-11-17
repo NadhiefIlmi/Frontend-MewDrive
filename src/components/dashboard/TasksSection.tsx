@@ -81,6 +81,27 @@ function apiTaskToTask(t: TaskItem): Task {
   };
 }
 
+// Convert local AttachedFile → FileItem for FilePreviewDialog
+function attachedToFileItem(f: AttachedFile): FileItem {
+  return {
+    id:              Number(f.id),
+    name:            f.name,
+    original_name:   f.original_name ?? f.name,
+    mime_type:       f.mime_type ?? "application/octet-stream",
+    extension:       f.extension ?? f.name.split(".").pop() ?? "",
+    size:            f.size ?? 0,
+    user_id:         0,
+    folder_id:       null,
+    storage_path:    "",
+    is_starred:      false,
+    is_trashed:      false,
+    trashed_at:      null,
+    last_accessed_at: null,
+    created_at:      "",
+    updated_at:      "",
+  };
+}
+
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUSES: {
@@ -503,24 +524,7 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange, isSelected, onToggle
                 type="button"
                 onClick={e => {
                   e.stopPropagation();
-                  // Construct FileItem minimal untuk FilePreviewDialog
-                  onPreviewFile({
-                    id:              Number(f.id),
-                    name:            f.name,
-                    original_name:   f.original_name ?? f.name,
-                    mime_type:       f.mime_type ?? "application/octet-stream",
-                    extension:       f.extension ?? f.name.split(".").pop() ?? "",
-                    size:            f.size ?? 0,
-                    user_id:         0,
-                    folder_id:       null,
-                    storage_path:    "",
-                    is_starred:      false,
-                    is_trashed:      false,
-                    trashed_at:      null,
-                    last_accessed_at: null,
-                    created_at:      "",
-                    updated_at:      "",
-                  });
+                  onPreviewFile(attachedToFileItem(f));
                 }}
                 onMouseDown={e => e.stopPropagation()}
                 draggable={false}
@@ -781,11 +785,96 @@ function TaskFormDialog({ initial, onSave, onClose }: TaskFormProps) {
 
 // ─── List View ────────────────────────────────────────────────────────────────
 
-function ListView({ tasks, onEdit, onDelete, onStatusChange }: {
+function AttachmentCell({ files, onPreviewFile }: { files: AttachedFile[]; onPreviewFile: (f: FileItem) => void }) {
+  const [open, setOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  if (!files || files.length === 0) {
+    return <span className="text-xs text-muted-foreground/40 font-mono">—</span>;
+  }
+
+  if (files.length === 1) {
+    const f = files[0];
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onPreviewFile(attachedToFileItem(f));
+        }}
+        className="flex max-w-[130px] items-center gap-1.5 rounded-md border border-ink/20 bg-background px-2 py-1 text-xs font-semibold text-foreground transition-all hover:bg-lime/40 hover:border-ink shadow-brutal-sm group/btn text-left"
+        title={`Lihat ${f.name}`}
+      >
+        <Paperclip className="size-3 shrink-0 text-muted-foreground group-hover/btn:text-ink" />
+        <span className="truncate text-[11px]">{f.name}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="relative inline-block" ref={popoverRef}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(p => !p);
+        }}
+        className={`flex items-center gap-1.5 rounded-md border border-ink/20 px-2 py-1 text-xs font-bold transition-all shadow-brutal-sm ${
+          open ? "bg-lime border-ink text-ink" : "bg-background hover:bg-muted/80 text-foreground"
+        }`}
+        title={`${files.length} file terlampir`}
+      >
+        <Paperclip className="size-3 shrink-0 text-ink" />
+        <span className="text-[11px]">{files.length} file</span>
+        <ChevronDown className={`size-3 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-30 mt-1 w-56 rounded-ui border-2 border-ink bg-card p-1.5 shadow-brutal">
+          <div className="mb-1 border-b border-ink/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+            <span>{files.length} Lampiran</span>
+          </div>
+          <div className="max-h-48 space-y-1 overflow-y-auto">
+            {files.map(f => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onPreviewFile(attachedToFileItem(f));
+                }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-medium transition-colors hover:bg-lime/40"
+              >
+                <HardDrive className="size-3 shrink-0 text-green-600" />
+                <span className="truncate flex-1 text-[11px] font-semibold">{f.name}</span>
+                <ExternalLink className="size-2.5 shrink-0 text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ListView({ tasks, onEdit, onDelete, onStatusChange, onPreviewFile }: {
   tasks: Task[];
   onEdit: (t: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, s: TaskStatus) => void;
+  onPreviewFile: (f: FileItem) => void;
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -800,19 +889,26 @@ function ListView({ tasks, onEdit, onDelete, onStatusChange }: {
   }
 
   return (
-    <div className="overflow-hidden rounded-ui border-2 border-ink shadow-brutal">
-      <div className="hidden grid-cols-[60px_1fr_130px_110px_100px_56px] gap-2 border-b-2 border-ink bg-ink px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-card sm:grid">
-        <span>ID</span><span>Judul</span><span>Status</span><span>Prioritas</span><span>Due Date</span><span />
+    <div className="overflow-x-auto rounded-ui border-2 border-ink shadow-brutal">
+      <div className="hidden grid-cols-[55px_1fr_120px_105px_95px_140px_56px] gap-2 border-b-2 border-ink bg-ink px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-card sm:grid min-w-[700px]">
+        <span>ID</span><span>Judul</span><span>Status</span><span>Prioritas</span><span>Due Date</span><span>Lampiran</span><span />
       </div>
       {tasks.map((task, idx) => {
         const due = formatDueDate(task.due_date);
         const isExpanded = expandedId === task.id;
         return (
           <div key={task.id} className={`border-b border-ink/15 last:border-0 ${idx % 2 === 1 ? "bg-muted/40" : "bg-card"}`}>
-            <div className="hidden grid-cols-[60px_1fr_130px_110px_100px_56px] items-center gap-2 px-4 py-3 text-sm sm:grid">
+            <div className="hidden grid-cols-[55px_1fr_120px_105px_95px_140px_56px] items-center gap-2 px-4 py-3 text-sm sm:grid min-w-[700px]">
               <span className="font-mono text-[10px] font-bold text-muted-foreground">#{String(task.id).padStart(3, "0")}</span>
               <div className="min-w-0">
-                <p className={`font-semibold leading-snug ${task.status === "done" ? "text-muted-foreground line-through" : ""}`}>{task.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className={`font-semibold leading-snug truncate ${task.status === "done" ? "text-muted-foreground line-through" : ""}`}>{task.title}</p>
+                  {task.attachedFiles.length > 0 && (
+                    <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/80 px-1 py-0.2 text-[9px] font-bold text-muted-foreground border border-ink/10" title={`${task.attachedFiles.length} file terlampir`}>
+                      <Paperclip className="size-2.5" />{task.attachedFiles.length}
+                    </span>
+                  )}
+                </div>
                 {task.description && (
                   <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{task.description}</p>
                 )}
@@ -820,6 +916,7 @@ function ListView({ tasks, onEdit, onDelete, onStatusChange }: {
               <StatusBadge status={task.status} />
               <PriorityBadge priority={task.priority} />
               <span className={`text-xs font-semibold ${due.overdue ? "text-red-600" : "text-muted-foreground"}`}>{due.label || "—"}</span>
+              <AttachmentCell files={task.attachedFiles} onPreviewFile={onPreviewFile} />
               <div className="flex gap-1">
                 <button onClick={() => onEdit(task)} className="grid size-7 place-items-center rounded border-[1.5px] border-ink/30 text-muted-foreground hover:border-ink hover:bg-sun" aria-label="Edit"><Pencil className="size-3" /></button>
                 <button onClick={() => onDelete(task.id)} className="grid size-7 place-items-center rounded border-[1.5px] border-ink/30 text-muted-foreground hover:border-ink hover:bg-coral" aria-label="Hapus"><Trash2 className="size-3" /></button>
@@ -845,6 +942,12 @@ function ListView({ tasks, onEdit, onDelete, onStatusChange }: {
                         <Calendar className="size-3" />{due.label}
                       </span>
                     )}
+                    {task.attachedFiles.length > 0 && (
+                      <span className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold text-foreground border border-ink/20">
+                        <Paperclip className="size-3 text-ink" />
+                        {task.attachedFiles.length} file
+                      </span>
+                    )}
                   </div>
                 </div>
                 {isExpanded
@@ -857,6 +960,28 @@ function ListView({ tasks, onEdit, onDelete, onStatusChange }: {
                   {/* Deskripsi */}
                   {task.description && (
                     <p className="text-xs text-muted-foreground leading-relaxed">{task.description}</p>
+                  )}
+                  {/* Lampiran File */}
+                  {task.attachedFiles.length > 0 && (
+                    <div className="space-y-1.5 pt-1 border-t border-dashed border-ink/20">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                        <Paperclip className="size-3" /> Lampiran ({task.attachedFiles.length})
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {task.attachedFiles.map(f => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => onPreviewFile(attachedToFileItem(f))}
+                            className="flex items-center gap-2 rounded-ui border-2 border-ink/20 bg-background px-2.5 py-2 text-left text-xs font-semibold hover:bg-lime/30 transition-colors shadow-brutal-sm"
+                          >
+                            <HardDrive className="size-3.5 text-green-600 shrink-0" />
+                            <span className="truncate flex-1 min-w-0 text-[11px]">{f.name}</span>
+                            <ExternalLink className="size-3 text-muted-foreground shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   {/* Action buttons */}
                   <div className="flex gap-2">
@@ -1335,7 +1460,13 @@ export function TasksSection({ onFlash, onRegisterNewTask, externalNewFormOpen, 
       )}
       {/* List */}
       {view === "list" && (
-        <ListView tasks={filteredTasks} onEdit={t => { setEditTask(t); setFormOpen(true); }} onDelete={handleDelete} onStatusChange={handleStatusChange} />
+        <ListView
+          tasks={filteredTasks}
+          onEdit={t => { setEditTask(t); setFormOpen(true); }}
+          onDelete={handleDelete}
+          onStatusChange={handleStatusChange}
+          onPreviewFile={f => setPreviewFile(f)}
+        />
       )}
 
       {/* Form */}
