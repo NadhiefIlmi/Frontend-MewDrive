@@ -40,7 +40,7 @@ jobs:
             ls -la dist/
 
             echo ">>> Reload frontend tanpa downtime"
-            pm2 reload mewdrive-frontend --update-env
+            pm2 reload MewDrive-frontend --update-env || pm2 start server-node.mjs --name "MewDrive-frontend"
 
             echo ">>> Simpan state PM2"
             pm2 save
