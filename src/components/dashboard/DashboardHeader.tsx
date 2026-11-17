@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Settings,
+  Bot,
   HardDrive,
   LogOut,
   Shield,
@@ -113,8 +113,8 @@ export function DashboardHeader({
                   )}
                 </div>
                 <MenuItem
-                  Icon={Settings}
-                  label="Pengaturan"
+                  Icon={Bot}
+                  label="Integrasi Telegram"
                   onClick={() => {
                     setOpenMenu(null);
                     onSectionChange("settings");

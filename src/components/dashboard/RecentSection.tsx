@@ -144,8 +144,11 @@ export function RecentSection({ onFlash }: RecentSectionProps) {
     queryKey: ["recent-files"],
     queryFn: async () => {
       const res = await api.getFileRecent(20);
-      if (res.success && res.data) return res.data.files;
-      throw new Error(res.error?.message ?? "Gagal memuat file terbaru");
+      if (res.success && res.data) {
+        const list = Array.isArray(res.data) ? res.data : (res.data as any)?.files ?? [];
+        return list;
+      }
+      return [];
     },
     staleTime: 60_000,
   });
@@ -156,6 +159,7 @@ export function RecentSection({ onFlash }: RecentSectionProps) {
       queryClient.setQueryData<FileItem[]>(["recent-files"], prev =>
         prev?.map(f => f.id === file.id ? { ...f, is_starred: !f.is_starred } : f) ?? []
       );
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
       onFlash(file.is_starred ? "Tanda bintang dihapus" : `"${file.name}" ditandai ★`);
     } else {
       onFlash(res.error?.message ?? "Gagal update file", "error");
@@ -173,6 +177,8 @@ export function RecentSection({ onFlash }: RecentSectionProps) {
       queryClient.setQueryData<FileItem[]>(["recent-files"], prev =>
         prev?.filter(f => f.id !== trashingFile!.id) ?? []
       );
+      queryClient.invalidateQueries({ queryKey: ["trash"] });
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
       onFlash(`"${trashingFile.name}" dipindahkan ke sampah`);
     } else {
       onFlash(res.error?.message ?? "Gagal menghapus file", "error");
