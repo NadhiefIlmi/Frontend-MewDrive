@@ -16,7 +16,7 @@ export function SettingsSection() {
   };
 
   return (
-    <div className="mt-6 sm:mt-10">
+    <div className="space-y-6">
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
       <TelegramSettings onFlash={flash} />
     </div>
