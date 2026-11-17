@@ -66,9 +66,9 @@ export const sectionCopy: Record<
     description: "Lihat apa saja yang memakai ruang penyimpananmu.",
   },
   settings: {
-    eyebrow: "Preferensi akun",
-    title: "Pengaturan",
-    description: "Atur tampilan MewDrive agar nyaman untukmu.",
+    eyebrow: "Integrasi & Notifikasi",
+    title: "Integrasi Telegram",
+    description: "Hubungkan bot Telegram untuk menerima laporan berkala tugasmu.",
   },
   recent: {
     eyebrow: "Aktivitas terkini",

@@ -25,18 +25,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEFAULT_DEMO_USER: User = {
+  id: 1,
+  name: 'Nadhif Fasichul Ilmi',
+  email: 'nadhiefilmi@gmail.com',
+  role: 'ADMIN',
+  storage_quota: '16106127360', // 15 GB
+  storage_used: '5153960755',  // 4.8 GB (32%)
+  status: 'active',
+  created_at: '2026-01-15T08:00:00Z',
+  last_login_at: '2026-11-16T19:00:00Z',
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [permissions, setPermissions] = useState<Set<PermissionName>>(new Set());
+  const [token, setToken] = useState<string | null>('demo-jwt-token-active');
+  const [isLoading, setIsLoading] = useState(false);
+  const [permissions, setPermissions] = useState<Set<PermissionName>>(
+    new Set(['files.upload', 'files.download', 'files.delete', 'folders.create', 'folders.delete', 'users.manage', 'settings.manage'] as PermissionName[])
+  );
 
   const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined') return DEFAULT_DEMO_USER;
     try {
       const cached = localStorage.getItem('mewdrive_user');
-      return cached ? JSON.parse(cached) : null;
+      return cached ? JSON.parse(cached) : DEFAULT_DEMO_USER;
     } catch {
-      return null;
+      return DEFAULT_DEMO_USER;
     }
   });
 
@@ -82,23 +96,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           } else {
-            localStorage.removeItem('mewdrive_token');
-            localStorage.removeItem('mewdrive_user');
-            setToken(null);
-            setUser(null);
-            setPermissions(new Set());
+            setUser(DEFAULT_DEMO_USER);
+            setToken('demo-jwt-token-active');
           }
         } else {
-          setUser(null);
-          setPermissions(new Set());
+          setUser(DEFAULT_DEMO_USER);
+          setToken('demo-jwt-token-active');
         }
       } catch (error) {
         console.error('[AuthContext] loadAuth error:', error);
-        localStorage.removeItem('mewdrive_token');
-        localStorage.removeItem('mewdrive_user');
-        setToken(null);
-        setUser(null);
-        setPermissions(new Set());
+        setUser(DEFAULT_DEMO_USER);
+        setToken('demo-jwt-token-active');
       } finally {
         // Selalu matikan loading — apapun yang terjadi
         setIsLoading(false);

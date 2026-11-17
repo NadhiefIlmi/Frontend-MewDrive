@@ -528,8 +528,8 @@ class ApiClient {
     return this.request<FilesPage>(`/files/starred${q}`);
   }
 
-  async getFileRecent(limit = 20): Promise<ApiResponse<FilesPage>> {
-    return this.request<FilesPage>(`/files/recent?limit=${limit}`);
+  async getFileRecent(limit = 20): Promise<ApiResponse<FileItem[] | FilesPage>> {
+    return this.request<FileItem[] | FilesPage>(`/files/recent?limit=${limit}`);
   }
 
   async getFile(id: number): Promise<ApiResponse<FileItem>> {

@@ -106,12 +106,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#000000" },
     ],
     links: [
-      // Self-hosted fonts — preload 4 DM Sans + 1 Space Grotesk latin weights
+      // Self-hosted fonts — preload DM Sans + Space Grotesk latin weights
       // Browser akan langsung mulai download sebelum CSS selesai di-parse
       { rel: "preload", as: "font", href: "/fonts/dm-sans-3.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", as: "font", href: "/fonts/dm-sans-5.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", as: "font", href: "/fonts/dm-sans-7.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", as: "font", href: "/fonts/dm-sans-9.woff2",      type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", as: "font", href: "/fonts/space-grotesk-8.woff2", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", as: "font", href: "/fonts/space-grotesk-2.woff2", type: "font/woff2", crossOrigin: "anonymous" },
       // LCP hero image — preload agar browser tidak tunggu JS hydration
       { rel: "preload", as: "image", href: "/kucing_pagi.webp", fetchPriority: "high" } as any,
