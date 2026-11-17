@@ -230,6 +230,11 @@ export function FilePreviewDialog({ file, onClose }: FilePreviewDialogProps) {
   const downloadUrl = api.getFileDownloadUrl(file.id);
   const kind        = getPreviewKind(file.mime_type);
 
+  // Selalu ping preview endpoint untuk mencatat aktivitas akses (last_accessed_at)
+  useEffect(() => {
+    fetch(previewUrl).catch(() => {});
+  }, [previewUrl]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"

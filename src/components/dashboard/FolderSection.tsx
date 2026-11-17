@@ -5,11 +5,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  Folder, FolderHeart, FolderOpen,
+  Folder, FolderHeart, FolderOpen, FolderPlus,
   MoreHorizontal, Pencil, Trash2, Star, StarOff, Loader2, X, MoveRight,
   Briefcase, BookOpen, Music, ImageIcon, Video, Home, Code2,
   FileText, Users, Archive, Layers, Palette, Globe, Heart,
   Coffee, Gamepad2, GraduationCap, Camera, Plane, ShoppingBag,
+  ChevronRight, Upload, HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -17,6 +18,7 @@ import { type ApiFolderItem, getFolderColor } from "@/types/dashboard";
 import { MoveDialog, type MoveTarget } from "@/components/dashboard/MoveDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 // ─── Icon registry ────────────────────────────────────────────────────────────
 export const FOLDER_ICONS: { name: string; label: string; Icon: React.ElementType }[] = [
@@ -163,7 +165,7 @@ function ColorPicker({
 }
 
 // ─── Create Folder Dialog ─────────────────────────────────────────────────────
-function CreateFolderDialog({
+export function CreateFolderDialog({
   parentId,
   onClose,
   onCreated,
@@ -394,42 +396,68 @@ export function FolderCard({
       tabIndex={0}
       onClick={() => onOpen(folder)}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(folder); } }}
-      className={`group relative flex h-28 w-full cursor-pointer flex-col items-start justify-between rounded-ui border-2 border-ink p-3 shadow-brutal-sm transition-transform hover:-translate-y-1 text-left sm:h-36 sm:p-4 ${colorCls}`}
+      className={`group relative flex flex-col justify-between rounded-2xl border-2 border-ink p-3.5 sm:p-4 shadow-brutal-sm hover:shadow-brutal transition-all duration-200 hover:-translate-y-0.5 text-left cursor-pointer min-h-[125px] sm:min-h-[145px] ${colorCls} ${isMenuOpen ? 'z-30' : 'z-0'}`}
       aria-label={`Buka folder ${folder.name}`}
     >
-      {/* Top row */}
-      <div className="flex w-full items-start justify-between">
-        <FolderIcon className="size-7 sm:size-9" />
-        <button
-          ref={btnRef}
-          type="button"
-          className="grid size-6 place-items-center rounded-ui border-2 border-ink bg-card/80 hover:bg-card sm:size-7"
-          onClick={handleMenuToggle}
-          data-folder-menu
-        >
-          <MoreHorizontal className="size-3.5 sm:size-4" />
-        </button>
+      {/* Top row: Icon badge + Action buttons */}
+      <div className="flex w-full items-start justify-between gap-2">
+        <div className="grid size-10 sm:size-11 place-items-center rounded-xl border-2 border-ink bg-card/90 text-ink shadow-[1px_1px_0px_0px_#000] group-hover:scale-105 transition-transform">
+          <FolderIcon className="size-5 sm:size-6 text-ink" />
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* Quick star toggle */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStar(folder);
+            }}
+            className="grid size-7 place-items-center rounded-lg border-2 border-ink bg-card/80 hover:bg-card shadow-brutal-xs transition-colors"
+            title={folder.is_starred ? "Hapus bintang" : "Beri bintang"}
+          >
+            <Star className={`size-3.5 ${folder.is_starred ? "fill-amber-400 text-amber-500" : "text-muted-foreground"}`} />
+          </button>
+
+          {/* More options menu */}
+          <button
+            ref={btnRef}
+            type="button"
+            className="grid size-7 place-items-center rounded-lg border-2 border-ink bg-card/80 hover:bg-sun shadow-brutal-xs transition-colors"
+            onClick={handleMenuToggle}
+            data-folder-menu
+            title="Opsi folder"
+          >
+            <MoreHorizontal className="size-3.5 text-ink" />
+          </button>
+        </div>
       </div>
 
-      {/* Name + starred */}
-      <div className="w-full">
-        <div className="flex items-center gap-1">
-          {folder.is_starred && <Star className="size-3 shrink-0 fill-current text-amber-500" />}
-          <p className="truncate font-display text-sm font-bold sm:text-lg">{folder.name}</p>
+      {/* Bottom row: Name + Badge */}
+      <div className="w-full pt-2">
+        <p className="truncate font-display text-sm sm:text-base font-bold text-foreground leading-snug">
+          {folder.name}
+        </p>
+        <div className="mt-1 flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full border border-ink/20 bg-background/60 px-2 py-0.2 text-[10px] font-bold text-foreground/70">
+            Folder
+          </span>
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-ink font-bold text-[10px]">
+            Buka →
+          </span>
         </div>
-        <p className="text-xs font-semibold text-foreground/60">Folder</p>
       </div>
 
       {/* Dropdown menu */}
       {isMenuOpen && (
         <div
-          className={`absolute right-2 z-20 min-w-[160px] rounded-ui border-2 border-ink bg-card p-1 shadow-brutal ${menuUp ? 'bottom-10' : 'top-10'}`}
+          className={`absolute right-2 z-50 min-w-[160px] rounded-2xl border-2 border-ink bg-card p-1.5 shadow-brutal ${menuUp ? 'bottom-10' : 'top-10'}`}
           onClick={e => e.stopPropagation()}
           data-folder-menu
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold hover:bg-muted"
+            className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold transition-colors hover:bg-sun"
             onClick={e => { e.stopPropagation(); onToggleStar(folder); onMenuToggle(null); }}
           >
             {folder.is_starred ? <StarOff className="size-4" /> : <Star className="size-4" />}
@@ -438,7 +466,7 @@ export function FolderCard({
           {can('edit_files') && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold transition-colors hover:bg-sun"
               onClick={e => { e.stopPropagation(); onEdit(folder); onMenuToggle(null); }}
             >
               <Pencil className="size-4" /> Edit Folder
@@ -447,7 +475,7 @@ export function FolderCard({
           {can('edit_files') && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold transition-colors hover:bg-sun"
               onClick={e => { e.stopPropagation(); onMove(folder); onMenuToggle(null); }}
             >
               <MoveRight className="size-4" /> Pindahkan
@@ -456,10 +484,10 @@ export function FolderCard({
           {can('delete_files') && (
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+              className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
               onClick={e => { e.stopPropagation(); onTrash(folder); onMenuToggle(null); }}
             >
-              <Trash2 className="size-4" /> Hapus
+              <Trash2 className="size-4" /> Hapus Folder
             </button>
           )}
         </div>
@@ -486,6 +514,8 @@ interface FolderSectionProps {
   onUploadClick?: () => void;
   /** Total folder dari API (untuk hitung hasMore) */
   foldersTotal?: number;
+  /** Total files dari API (opsional untuk ringkasan cockpit) */
+  filesTotal?: number;
   /** Sedang loading halaman berikutnya */
   loadingMore?: boolean;
   /** Callback untuk muat halaman berikutnya */
@@ -508,6 +538,7 @@ export function FolderSection({
   onCreateDialogClosed,
   onUploadClick,
   foldersTotal = 0,
+  filesTotal = 0,
   loadingMore = false,
   onLoadMore,
 }: FolderSectionProps) {
@@ -517,6 +548,7 @@ export function FolderSection({
   const [trashingFolder, setTrashingFolder] = useState<ApiFolderItem | null>(null);
   const [menuOpenId, setMenuOpenId]         = useState<number | null>(null);
   const { can } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (forceShowCreate) setShowCreate(true);
@@ -545,6 +577,8 @@ export function FolderSection({
     if (res.success) {
       onFolderTrashed(trashingFolder.id);
       onFlash(`"${trashingFolder.name}" dipindahkan ke sampah`);
+      queryClient.invalidateQueries({ queryKey: ["trash"] });
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
     } else {
       onFlash(res.error?.message ?? "Gagal menghapus folder", "error");
     }
@@ -556,6 +590,7 @@ export function FolderSection({
     if (res.success && res.data) {
       onFolderStarToggled(res.data as ApiFolderItem);
       onFlash(res.data.is_starred ? `"${folder.name}" ditandai ★` : "Tanda bintang dihapus");
+      queryClient.invalidateQueries({ queryKey: ["favorites"] });
     }
   };
 
@@ -569,103 +604,230 @@ export function FolderSection({
   }
 
   return (
-    <>
-      {/* Breadcrumb + tombol Folder Baru sejajar */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        {/* Breadcrumb */}
-        {breadcrumb.length > 0 ? (
-          <nav className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-sm font-semibold">
-            <button
-              onClick={() => onBreadcrumbNavigate?.(-1)}
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Dokumen saya
-            </button>
-            {breadcrumb.map((crumb, idx) => (
-              <span key={crumb.id} className="flex items-center gap-1">
-                <span className="text-muted-foreground">/</span>
-                {idx === breadcrumb.length - 1 ? (
-                  <span className="max-w-[120px] truncate font-bold text-foreground sm:max-w-none">{crumb.name}</span>
+    <div className="space-y-6 pt-2">
+      {/* ─── Cockpit Stats Overview ─── */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 lg:grid-cols-4">
+        {/* Total Folder */}
+        <div className="group rounded-2xl border-2 border-ink bg-card p-3 sm:p-4 shadow-brutal-xs hover:shadow-brutal-sm transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Folder</span>
+            <div className="grid size-8 place-items-center rounded-lg border-2 border-ink bg-sun shadow-[1px_1px_0px_#000]">
+              <Folder className="size-4 text-ink" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="font-display text-2xl sm:text-3xl font-bold">{foldersTotal || folders.length}</span>
+            <span className="text-xs font-bold text-muted-foreground">folder</span>
+          </div>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground truncate">
+            {folders.length} folder ditampilkan
+          </p>
+        </div>
+
+        {/* Total File */}
+        <div className="group rounded-2xl border-2 border-ink bg-card p-3 sm:p-4 shadow-brutal-xs hover:shadow-brutal-sm transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Berkas</span>
+            <div className="grid size-8 place-items-center rounded-lg border-2 border-ink bg-lilac shadow-[1px_1px_0px_#000]">
+              <FileText className="size-4 text-ink" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="font-display text-2xl sm:text-3xl font-bold">{filesTotal}</span>
+            <span className="text-xs font-bold text-muted-foreground">file</span>
+          </div>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground truncate">
+            Dokumen, foto & berkas
+          </p>
+        </div>
+
+        {/* Posisi Lokasi */}
+        <div className="group rounded-2xl border-2 border-ink bg-card p-3 sm:p-4 shadow-brutal-xs hover:shadow-brutal-sm transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Lokasi</span>
+            <div className="grid size-8 place-items-center rounded-lg border-2 border-ink bg-sky shadow-[1px_1px_0px_#000]">
+              <HardDrive className="size-4 text-ink" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="truncate font-display text-base sm:text-lg font-bold text-foreground">
+              {breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1].name : "Direktori Utama"}
+            </p>
+          </div>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground truncate">
+            {breadcrumb.length > 0 ? `${breadcrumb.length} tingkat sub-folder` : "Root directory"}
+          </p>
+        </div>
+
+        {/* Kuota File */}
+        <div className="group rounded-2xl border-2 border-ink bg-card p-3 sm:p-4 shadow-brutal-xs hover:shadow-brutal-sm transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Batas Unggah</span>
+            <div className="grid size-8 place-items-center rounded-lg border-2 border-ink bg-lime shadow-[1px_1px_0px_#000]">
+              <Upload className="size-4 text-ink" />
+            </div>
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="font-display text-2xl sm:text-3xl font-bold">15 MB</span>
+            <span className="text-xs font-bold text-muted-foreground">/ berkas</span>
+          </div>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground truncate">
+            Maksimal per berkas
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Breadcrumb Navigation & Action Toolbar ─── */}
+      <div className="rounded-2xl border-2 border-ink bg-card p-2 sm:p-3 shadow-brutal-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Breadcrumb Path Bar */}
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            type="button"
+            onClick={() => onBreadcrumbNavigate?.(-1)}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-ink px-3 py-1.5 text-xs sm:text-sm font-bold transition-all hover:-translate-y-0.5 ${
+              breadcrumb.length === 0
+                ? "bg-sun text-ink shadow-brutal-xs"
+                : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Home className="size-3.5" />
+            <span>Dokumen saya</span>
+          </button>
+
+          {breadcrumb.map((crumb, idx) => {
+            const isLast = idx === breadcrumb.length - 1;
+            return (
+              <div key={crumb.id} className="flex shrink-0 items-center gap-1.5">
+                <ChevronRight className="size-3.5 text-ink/40" />
+                {isLast ? (
+                  <span className="inline-flex max-w-[140px] sm:max-w-[200px] truncate items-center rounded-xl border-2 border-ink bg-sun px-3 py-1.5 text-xs sm:text-sm font-bold text-ink shadow-brutal-xs">
+                    {crumb.name}
+                  </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => onBreadcrumbNavigate?.(idx)}
-                    className="max-w-[80px] truncate text-muted-foreground transition-colors hover:text-foreground sm:max-w-none"
+                    className="inline-flex max-w-[110px] sm:max-w-[160px] truncate items-center rounded-xl border-2 border-ink bg-background px-2.5 py-1.5 text-xs sm:text-sm font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground hover:-translate-y-0.5"
                   >
                     {crumb.name}
                   </button>
                 )}
-              </span>
-            ))}
-          </nav>
-        ) : (
-          <span className="text-sm font-semibold text-muted-foreground">Folder</span>
-        )}
+              </div>
+            );
+          })}
+        </div>
 
-        {/* Tombol aksi */}
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <div className="flex items-center gap-2">
-            {can('create_files') && (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
-                <Folder className="size-4" />
-                <span className="hidden xs:inline">Folder Baru</span>
-                <span className="xs:hidden">Folder</span>
-              </Button>
-            )}
-            {onUploadClick && can('create_files') && (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={onUploadClick}>
-                <span className="text-base leading-none">↑</span>
-                <span className="hidden xs:inline">Upload File</span>
-                <span className="xs:hidden">Upload</span>
-              </Button>
-            )}
-          </div>
+        {/* Action Buttons */}
+        <div className="flex shrink-0 items-center gap-2 self-end md:self-auto w-full md:w-auto">
+          {can('create_files') && (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink bg-card px-3.5 py-2 text-xs sm:text-sm font-bold text-foreground shadow-brutal-xs transition-all hover:bg-muted hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <FolderPlus className="size-4 text-ink" />
+              <span>Folder Baru</span>
+            </button>
+          )}
+
           {onUploadClick && can('create_files') && (
-            <p className="text-xs text-muted-foreground">Maks. 15 MB per file</p>
+            <button
+              type="button"
+              onClick={onUploadClick}
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-ink bg-lime px-3.5 py-2 text-xs sm:text-sm font-bold text-ink shadow-brutal-xs transition-all hover:-translate-y-0.5 hover:shadow-brutal-sm active:translate-y-0"
+            >
+              <Upload className="size-4" />
+              <span>Upload File</span>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Grid folder */}
-      {folders.length > 0 && (
-        <>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {folders.map((folder, idx) => (
-              <FolderCard
-                key={folder.id}
-                folder={folder}
-                index={idx}
-                onOpen={onFolderOpen}
-                onEdit={setEditingFolder}
-                onTrash={handleTrash}
-                onToggleStar={handleToggleStar}
-                onMove={setMovingFolder}
-                menuOpenId={menuOpenId}
-                onMenuToggle={setMenuOpenId}
-              />
-            ))}
+      {/* ─── Folder Section Directory ─── */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg sm:text-xl font-bold flex items-center gap-2">
+              Direktori Folder
+            </h2>
+            <span className="rounded-full border-2 border-ink bg-sun/40 px-2.5 py-0.5 text-xs font-bold text-ink">
+              {foldersTotal || folders.length}
+            </span>
           </div>
-
-          {/* Load More — tampil jika masih ada yang belum dimuat */}
-          {folders.length < foldersTotal && (
-            <div className="mt-4 flex flex-col items-center gap-1">
-              <button
-                onClick={onLoadMore}
-                disabled={loadingMore}
-                className="flex items-center gap-2 rounded-ui border-2 border-ink bg-card px-5 py-2.5 text-sm font-bold shadow-brutal-sm transition-all hover:-translate-y-0.5 hover:shadow-brutal disabled:pointer-events-none disabled:opacity-60"
-              >
-                {loadingMore ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <span>Muat lebih banyak</span>
-                )}
-              </button>
-              <p className="text-xs text-muted-foreground">
-                Menampilkan {folders.length} dari {foldersTotal} folder
-              </p>
-            </div>
+          {breadcrumb.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onBreadcrumbNavigate?.(breadcrumb.length - 2)}
+              className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground hover:underline"
+            >
+              ← Kembali ke level atas
+            </button>
           )}
-        </>
-      )}
+        </div>
+
+        {folders.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-ink/40 bg-card/60 p-8 sm:p-10 text-center">
+            <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl border-2 border-ink bg-sun/30 shadow-brutal-xs">
+              <Folder className="size-6 text-muted-foreground" />
+            </div>
+            <p className="font-display text-base font-bold text-foreground">
+              {breadcrumb.length > 0 ? "Folder ini belum memiliki sub-folder" : "Belum ada folder"}
+            </p>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+              Buat folder untuk merapikan dan mengelompokkan dokumenmu.
+            </p>
+            {can('create_files') && (
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-sun px-4 py-2 text-xs sm:text-sm font-bold text-ink shadow-brutal-xs hover:-translate-y-0.5 transition-all"
+              >
+                <FolderPlus className="size-4" />
+                <span>Buat Folder Baru</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+              {folders.map((folder, idx) => (
+                <FolderCard
+                  key={folder.id}
+                  folder={folder}
+                  index={idx}
+                  onOpen={onFolderOpen}
+                  onEdit={setEditingFolder}
+                  onTrash={handleTrash}
+                  onToggleStar={handleToggleStar}
+                  onMove={setMovingFolder}
+                  menuOpenId={menuOpenId}
+                  onMenuToggle={setMenuOpenId}
+                />
+              ))}
+            </div>
+
+            {/* Load More — tampil jika masih ada yang belum dimuat */}
+            {folders.length < foldersTotal && (
+              <div className="mt-5 flex flex-col items-center gap-1">
+                <button
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-card px-5 py-2.5 text-sm font-bold shadow-brutal-xs transition-all hover:-translate-y-0.5 hover:shadow-brutal-sm disabled:pointer-events-none disabled:opacity-60"
+                >
+                  {loadingMore ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <span>Muat lebih banyak folder</span>
+                  )}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Menampilkan {folders.length} dari {foldersTotal} folder
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Dialogs */}
       {showCreate && (
@@ -715,6 +877,6 @@ export function FolderSection({
           onCancel={() => setTrashingFolder(null)}
         />
       )}
-    </>
+    </div>
   );
 }
