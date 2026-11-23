@@ -25,32 +25,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_DEMO_USER: User = {
-  id: 1,
-  name: 'Nadhif Fasichul Ilmi',
-  email: 'nadhiefilmi@gmail.com',
-  role: 'ADMIN',
-  storage_quota: '16106127360', // 15 GB
-  storage_used: '5153960755',  // 4.8 GB (32%)
-  status: 'active',
-  created_at: '2026-01-15T08:00:00Z',
-  last_login_at: '2026-11-16T19:00:00Z',
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>('demo-jwt-token-active');
-  const [isLoading, setIsLoading] = useState(false);
-  const [permissions, setPermissions] = useState<Set<PermissionName>>(
-    new Set(['files.upload', 'files.download', 'files.delete', 'folders.create', 'folders.delete', 'users.manage', 'settings.manage'] as PermissionName[])
-  );
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('mewdrive_token');
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('mewdrive_token');
+  });
+  const [permissions, setPermissions] = useState<Set<PermissionName>>(new Set());
 
   const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === 'undefined') return DEFAULT_DEMO_USER;
+    if (typeof window === 'undefined') return null;
     try {
       const cached = localStorage.getItem('mewdrive_user');
-      return cached ? JSON.parse(cached) : DEFAULT_DEMO_USER;
+      return cached ? JSON.parse(cached) : null;
     } catch {
-      return DEFAULT_DEMO_USER;
+      return null;
     }
   });
 
@@ -90,23 +82,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (cached) {
               try {
                 const cachedUser = JSON.parse(cached) as User;
+                setUser(cachedUser);
                 await fetchPermissions(cachedUser.id);
               } catch (parseErr) {
                 console.error('[AuthContext] Failed to parse cached user:', parseErr);
+                setUser(null);
+                setToken(null);
+                localStorage.removeItem('mewdrive_token');
+                localStorage.removeItem('mewdrive_user');
               }
             }
           } else {
-            setUser(DEFAULT_DEMO_USER);
-            setToken('demo-jwt-token-active');
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('mewdrive_token');
+            localStorage.removeItem('mewdrive_user');
+            setPermissions(new Set());
           }
         } else {
-          setUser(DEFAULT_DEMO_USER);
-          setToken('demo-jwt-token-active');
+          setUser(null);
+          setToken(null);
+          setPermissions(new Set());
         }
       } catch (error) {
         console.error('[AuthContext] loadAuth error:', error);
-        setUser(DEFAULT_DEMO_USER);
-        setToken('demo-jwt-token-active');
+        setUser(null);
+        setToken(null);
+        setPermissions(new Set());
       } finally {
         // Selalu matikan loading — apapun yang terjadi
         setIsLoading(false);
@@ -175,8 +177,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPermissions]);
 
   const can = useCallback(
-    (permission: PermissionName) => permissions.has(permission),
-    [permissions]
+    (permission: PermissionName) => {
+      if (user?.role?.toUpperCase() === 'ADMIN') return true;
+      return permissions.has(permission);
+    },
+    [permissions, user]
   );
 
   const value: AuthContextType = {

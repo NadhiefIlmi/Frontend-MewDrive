@@ -146,15 +146,7 @@ export function HomeSection({
   const [storageQuotaBytes, setStorageQuotaBytes] = useState<number>(0);
 
   // Recent files data
-  const DEMO_RECENT_FILES: FileItem[] = [
-    { id: 1, user_id: 1, folder_id: null, name: "MewDrive_Design_System_v2.pdf", original_name: "MewDrive_Design_System_v2.pdf", mime_type: "application/pdf", extension: "pdf", size: 4850000, storage_path: "/uploads/1.pdf", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: new Date(Date.now() - 15 * 60000).toISOString(), created_at: "2026-11-14T08:30:00Z", updated_at: "2026-11-15T09:15:00Z" },
-    { id: 2, user_id: 1, folder_id: null, name: "Financial_Report_Q4_2026.xlsx", original_name: "Financial_Report_Q4_2026.xlsx", mime_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", extension: "xlsx", size: 1950000, storage_path: "/uploads/2.xlsx", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: new Date(Date.now() - 45 * 60000).toISOString(), created_at: "2026-11-12T14:10:00Z", updated_at: "2026-11-14T11:00:00Z" },
-    { id: 3, user_id: 1, folder_id: null, name: "Microservices_Architecture_Diagram.png", original_name: "Microservices_Architecture_Diagram.png", mime_type: "image/png", extension: "png", size: 3240000, storage_path: "/uploads/3.png", is_starred: false, is_trashed: false, trashed_at: null, last_accessed_at: new Date(Date.now() - 120 * 60000).toISOString(), created_at: "2026-11-10T17:20:00Z", updated_at: "2026-11-13T15:40:00Z" },
-    { id: 4, user_id: 1, folder_id: null, name: "PostgreSQL_Database_Backup.zip", original_name: "PostgreSQL_Database_Backup.zip", mime_type: "application/zip", extension: "zip", size: 18400000, storage_path: "/uploads/4.zip", is_starred: false, is_trashed: false, trashed_at: null, last_accessed_at: new Date(Date.now() - 360 * 60000).toISOString(), created_at: "2026-11-08T22:00:00Z", updated_at: "2026-11-09T01:30:00Z" },
-    { id: 5, user_id: 1, folder_id: null, name: "Sprint_Planning_Review.docx", original_name: "Sprint_Planning_Review.docx", mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", extension: "docx", size: 760000, storage_path: "/uploads/5.docx", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: new Date(Date.now() - 720 * 60000).toISOString(), created_at: "2026-11-05T13:45:00Z", updated_at: "2026-11-12T10:20:00Z" }
-  ];
-
-  const [recentFiles, setRecentFiles]     = useState<FileItem[]>(DEMO_RECENT_FILES);
+  const [recentFiles, setRecentFiles]     = useState<FileItem[]>([]);
   const [recentLoading, setRecentLoading] = useState<boolean>(false);
   const [previewFile, setPreviewFile]     = useState<FileItem | null>(null);
 
@@ -214,12 +206,12 @@ export function HomeSection({
     api.getFileRecent(6).then((res) => {
       if (res.success && res.data) {
         const list = Array.isArray(res.data) ? res.data : (res.data as any)?.files ?? [];
-        setRecentFiles(list.length > 0 ? list : DEMO_RECENT_FILES);
+        setRecentFiles(list);
       } else {
-        setRecentFiles(DEMO_RECENT_FILES);
+        setRecentFiles([]);
       }
     }).catch(() => {
-      setRecentFiles(DEMO_RECENT_FILES);
+      setRecentFiles([]);
     })
     .finally(() => setRecentLoading(false));
   };

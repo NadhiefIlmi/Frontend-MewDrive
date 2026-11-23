@@ -1,80 +1,15 @@
-import { Clock, Upload, Download, FileText, Trash2, Edit3, Folder } from "lucide-react";
+import { Clock, type LucideIcon } from "lucide-react";
 
 type Activity = {
   id: string;
   action: string;
   description: string;
   timestamp: string;
-  icon: typeof Upload;
+  icon: LucideIcon;
   color: string;
 };
 
-const mockActivities: Activity[] = [
-  {
-    id: "1",
-    action: "File Uploaded",
-    description: "Brand Guidelines.pdf diunggah",
-    timestamp: "2 jam yang lalu",
-    icon: Upload,
-    color: "bg-lime",
-  },
-  {
-    id: "2",
-    action: "File Downloaded",
-    description: "Project Plan.docx didownload",
-    timestamp: "5 jam yang lalu",
-    icon: Download,
-    color: "bg-sky",
-  },
-  {
-    id: "3",
-    action: "File Edited",
-    description: "Meeting Notes.txt diedit",
-    timestamp: "Kemarin, 14:30",
-    icon: Edit3,
-    color: "bg-lilac",
-  },
-  {
-    id: "4",
-    action: "Folder Created",
-    description: "Folder 'Marketing' dibuat",
-    timestamp: "Kemarin, 10:15",
-    icon: Folder,
-    color: "bg-sun",
-  },
-  {
-    id: "5",
-    action: "File Deleted",
-    description: "Old Report.pdf dihapus",
-    timestamp: "2 hari yang lalu",
-    icon: Trash2,
-    color: "bg-coral",
-  },
-  {
-    id: "6",
-    action: "File Uploaded",
-    description: "Budget Q4.xlsx diunggah",
-    timestamp: "3 hari yang lalu",
-    icon: Upload,
-    color: "bg-lime",
-  },
-  {
-    id: "7",
-    action: "File Downloaded",
-    description: "Design Mockup.png didownload",
-    timestamp: "3 hari yang lalu",
-    icon: Download,
-    color: "bg-sky",
-  },
-  {
-    id: "8",
-    action: "File Edited",
-    description: "README.md diedit",
-    timestamp: "4 hari yang lalu",
-    icon: Edit3,
-    color: "bg-lilac",
-  },
-];
+const mockActivities: Activity[] = [];
 
 export function ActivityTab({ userId }: { userId: number }) {
   return (

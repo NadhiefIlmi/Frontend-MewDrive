@@ -139,22 +139,6 @@ function Index() {
   const [searchPreviewFile, setSearchPreviewFile] = useState<FileItem | null>(null);
   const [tasksNewFormOpen, setTasksNewFormOpen]   = useState(false);
 
-const DEMO_FALLBACK_FOLDERS: ApiFolderItem[] = [
-  { id: 1, user_id: 1, parent_id: null, name: "Project Documents", color: "lime", icon: "folder", is_starred: true, is_trashed: false, trashed_at: null, created_at: "2026-11-01T10:00:00Z", updated_at: "2026-11-01T10:00:00Z" },
-  { id: 2, user_id: 1, parent_id: null, name: "Design Assets & UI", color: "coral", icon: "folder", is_starred: true, is_trashed: false, trashed_at: null, created_at: "2026-11-03T11:30:00Z", updated_at: "2026-11-03T11:30:00Z" },
-  { id: 3, user_id: 1, parent_id: null, name: "Financial & Contracts", color: "sky", icon: "folder", is_starred: false, is_trashed: false, trashed_at: null, created_at: "2026-11-05T09:15:00Z", updated_at: "2026-11-05T09:15:00Z" },
-  { id: 4, user_id: 1, parent_id: null, name: "Production Backups", color: "sun", icon: "folder", is_starred: false, is_trashed: false, trashed_at: null, created_at: "2026-11-08T14:20:00Z", updated_at: "2026-11-08T14:20:00Z" },
-  { id: 5, user_id: 1, parent_id: null, name: "Client Presentations", color: "lilac", icon: "folder", is_starred: true, is_trashed: false, trashed_at: null, created_at: "2026-11-10T16:45:00Z", updated_at: "2026-11-10T16:45:00Z" },
-];
-
-const DEMO_FALLBACK_FILES: FileItem[] = [
-  { id: 1, user_id: 1, folder_id: null, name: "MewDrive_Design_System_v2.pdf", original_name: "MewDrive_Design_System_v2.pdf", mime_type: "application/pdf", extension: "pdf", size: 4850000, storage_path: "/uploads/1.pdf", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: "2026-11-16T12:00:00Z", created_at: "2026-11-14T08:30:00Z", updated_at: "2026-11-15T09:15:00Z" },
-  { id: 2, user_id: 1, folder_id: null, name: "Financial_Report_Q4_2026.xlsx", original_name: "Financial_Report_Q4_2026.xlsx", mime_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", extension: "xlsx", size: 1950000, storage_path: "/uploads/2.xlsx", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: "2026-11-16T14:20:00Z", created_at: "2026-11-12T14:10:00Z", updated_at: "2026-11-14T11:00:00Z" },
-  { id: 3, user_id: 1, folder_id: null, name: "Microservices_Architecture_Diagram.png", original_name: "Microservices_Architecture_Diagram.png", mime_type: "image/png", extension: "png", size: 3240000, storage_path: "/uploads/3.png", is_starred: false, is_trashed: false, trashed_at: null, last_accessed_at: "2026-11-15T18:00:00Z", created_at: "2026-11-10T17:20:00Z", updated_at: "2026-11-13T15:40:00Z" },
-  { id: 4, user_id: 1, folder_id: null, name: "PostgreSQL_Database_Backup.zip", original_name: "PostgreSQL_Database_Backup.zip", mime_type: "application/zip", extension: "zip", size: 18400000, storage_path: "/uploads/4.zip", is_starred: false, is_trashed: false, trashed_at: null, last_accessed_at: "2026-11-14T11:30:00Z", created_at: "2026-11-08T22:00:00Z", updated_at: "2026-11-09T01:30:00Z" },
-  { id: 5, user_id: 1, folder_id: null, name: "Sprint_Planning_Review.docx", original_name: "Sprint_Planning_Review.docx", mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", extension: "docx", size: 760000, storage_path: "/uploads/5.docx", is_starred: true, is_trashed: false, trashed_at: null, last_accessed_at: "2026-11-16T10:15:00Z", created_at: "2026-11-05T13:45:00Z", updated_at: "2026-11-12T10:20:00Z" },
-];
-
   // ─── Fetch files dari API ─────────────────────────────────────────────────
   // Reset ke halaman 1 (fetch baru saat folder berubah)
   const fetchFiles = useCallback(async (folderId: number | null = null) => {
@@ -162,16 +146,16 @@ const DEMO_FALLBACK_FILES: FileItem[] = [
     setFilesPage(1);
     try {
       const res = await api.getFiles(folderId, { page: 1, limit: FILES_LIMIT });
-      if (res.success && res.data && res.data.files.length > 0) {
-        setApiFiles(res.data.files);
-        setFilesTotal(res.data.total);
+      if (res.success && res.data) {
+        setApiFiles(res.data.files || []);
+        setFilesTotal(res.data.total ?? (res.data.files?.length || 0));
       } else {
-        setApiFiles(DEMO_FALLBACK_FILES);
-        setFilesTotal(DEMO_FALLBACK_FILES.length);
+        setApiFiles([]);
+        setFilesTotal(0);
       }
     } catch {
-      setApiFiles(DEMO_FALLBACK_FILES);
-      setFilesTotal(DEMO_FALLBACK_FILES.length);
+      setApiFiles([]);
+      setFilesTotal(0);
     }
     setFilesLoading(false);
   }, [FILES_LIMIT]);
@@ -194,16 +178,16 @@ const DEMO_FALLBACK_FILES: FileItem[] = [
     setFoldersPage(1);
     try {
       const res = await api.getFolders(parentId, { page: 1, limit: FOLDERS_LIMIT });
-      if (res.success && res.data && (res.data.folders as any[]).length > 0) {
-        setApiFolders(res.data.folders as ApiFolderItem[]);
-        setFoldersTotal(res.data.total);
+      if (res.success && res.data) {
+        setApiFolders((res.data.folders as ApiFolderItem[]) || []);
+        setFoldersTotal(res.data.total ?? ((res.data.folders as any[])?.length || 0));
       } else {
-        setApiFolders(DEMO_FALLBACK_FOLDERS);
-        setFoldersTotal(DEMO_FALLBACK_FOLDERS.length);
+        setApiFolders([]);
+        setFoldersTotal(0);
       }
     } catch {
-      setApiFolders(DEMO_FALLBACK_FOLDERS);
-      setFoldersTotal(DEMO_FALLBACK_FOLDERS.length);
+      setApiFolders([]);
+      setFoldersTotal(0);
     }
     setFoldersLoading(false);
   }, [FOLDERS_LIMIT]);
